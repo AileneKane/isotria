@@ -1,0 +1,314 @@
+#Figures and individual life history traits estimated from posterior samples of multistate model for Isotria medioloides Alton NH population
+#Data provided by Bill Brumback
+#Coding by Ailene Ettinger with help frmo Andy Roly and Elizabeth Crone
+#this file has code for all figures in the manuscript, and for estimating life history traits 
+#(lifepsan, proportion dormant, length of dormancy)
+#setwd("~/isotria") #at usgs
+#setwd("~/Dropbox/Documents/Work/projects_inprog/isotria/analyses/MultistateModels")
+rm(list=ls()) 
+options(stringsAsFactors=FALSE)
+
+### select out vital rates to calculate dwell times, etc
+library(popbio)
+mod.samples<-read.csv("msmod_samples_complex.csv", header=T)
+# vital rates for group X prior to clearing
+phiV_Xpre<-mod.samples[,which(colnames(mod.samples)=="phiA0.1.")]#if not read in, colname=psiA0[1]
+phiR_Xpre<-mod.samples[,which(colnames(mod.samples)=="phiB0.1.")]#if not read in, colname=psiB0[1]
+pdormV_Xpre<-1-mod.samples[,which(colnames(mod.samples)=="pA0.1.")]#if not read in, colname=pA0[1]
+pdormR_Xpre<-1-mod.samples[,which(colnames(mod.samples)=="pB0.1.")]#if not read in, colname=pB0[1]
+veg.rep_Xpre<- mod.samples[,which(colnames(mod.samples)=="psiA0.1.")]#if not read in, colname=phiA0[1]
+rep.veg_Xpre<-mod.samples[,which(colnames(mod.samples)=="psiB0.1.")]#if not read in, colname=phiB0[1]
+
+# vital rates for group Y prior to clearing
+phiV_Ypre<-mod.samples[,which(colnames(mod.samples)=="phiA0.2.")]#if not read in, colname=psiA0[2]
+phiR_Ypre<-mod.samples[,which(colnames(mod.samples)=="phiB0.2.")]#if not read in, colname=psiB0[2]
+pdormV_Ypre<-1-mod.samples[,which(colnames(mod.samples)=="pA0.2.")]#if not read in, colname=pA0[2]
+pdormR_Ypre<-1-mod.samples[,which(colnames(mod.samples)=="pB0.2.")]#if not read in, colname=pB0[2]
+veg.rep_Ypre<- mod.samples[,which(colnames(mod.samples)=="psiA0.2.")]#if not read in, colname=phiA0[2]
+rep.veg_Ypre<-mod.samples[,which(colnames(mod.samples)=="psiB0.2.")]#if not read in, colname=phiB0[2]
+
+# vital rates for group X after clearing
+phiV_Xpost<-mod.samples[,which(colnames(mod.samples)=="phiA1.1.")]#if not read in, colname=psiA1[1]
+phiR_Xpost<-mod.samples[,which(colnames(mod.samples)=="phiB1.1.")]#if not read in, colname=psiB1[1]
+pdormV_Xpost<-1-mod.samples[,which(colnames(mod.samples)=="pA1.1.")]#if not read in, colname=pA1[1]
+pdormR_Xpost<-1-mod.samples[,which(colnames(mod.samples)=="pB1.1.")]#if not read in, colname=pB1[1]
+veg.rep_Xpost<- mod.samples[,which(colnames(mod.samples)=="psiA1.1.")]#if not read in, colname=phiA1[1]
+rep.veg_Xpost<-mod.samples[,which(colnames(mod.samples)=="psiB1.1.")]#if not read in, colname=phiB1[1]
+
+# vital rates for group Y after clearing
+phiV_Ypost<-mod.samples[,which(colnames(mod.samples)=="phiA1.2.")]#if not read in, colname=psiA1[2]
+phiR_Ypost<-mod.samples[,which(colnames(mod.samples)=="phiB1.2.")]#if not read in, colname=psiB1[2]
+pdormV_Ypost<-1-mod.samples[,which(colnames(mod.samples)=="pA1.2.")]#if not read in, colname=pA1[2]
+pdormR_Ypost<-1-mod.samples[,which(colnames(mod.samples)=="pB1.2.")]#if not read in, colname=pB1[2]
+veg.rep_Ypost<- mod.samples[,which(colnames(mod.samples)=="psiA1.2.")]#if not read in, colname=phiA1[2]
+rep.veg_Ypost<-mod.samples[,which(colnames(mod.samples)=="psiB1.2.")]#if not read in, colname=phiB1[2]
+
+###Porportion of plants dormant in each condition
+get.propdorm <- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR) {
+  prop.dorm= array()
+  for (i in 1:length(phiV)){
+    tmx = c(phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i], phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i],
+            phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i], phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i],
+            phiV[i]*(1-veg.rep[i])*(1-pdormV[i]), phiR[i]*rep.veg[i]*(1-pdormV[i]), phiV[i]*(1-veg.rep[i])*(1-pdormV[i]), phiR[i]*rep.veg[i]*(1-pdormV[i]),
+            phiV[i]*veg.rep[i]*(1-pdormR[i]), phiR[i]*(1-rep.veg[i])*(1-pdormR[i]), phiV[i]*veg.rep[i]*(1-pdormR[i]), phiR[i]*(1-rep.veg[i])*(1-pdormR[i]))
+    tmx = matrix(tmx, nrow = 4, byrow = T)
+    eigen.analysis(tmx)$stable.stage
+    prop.dorm[i] = sum(eigen.analysis(tmx)$stable.stage[1:2])
+  }
+  return(prop.dorm)#
+  
+}
+#even though clearing does not change the probability of dormancy per se, it could change the expected proportion of dormant plants via changes in other vital rates.
+propdorm_Xpre<-get.propdorm(phiV_Xpre,veg.rep_Xpre,pdormV_Xpre,phiR_Xpre,rep.veg_Xpre,pdormR_Xpre)
+propdorm_Ypre<-get.propdorm(phiV_Ypre,veg.rep_Ypre,pdormV_Ypre,phiR_Ypre,rep.veg_Ypre,pdormR_Ypre)
+propdorm_Xpost<-get.propdorm(phiV_Xpost,veg.rep_Xpost,pdormV_Xpost,phiR_Xpost,rep.veg_Xpost,pdormR_Xpost)
+propdorm_Ypost<-get.propdorm(phiV_Ypost,veg.rep_Ypost,pdormV_Ypost,phiR_Ypost,rep.veg_Ypost,pdormR_Ypost)
+windows(height=6,width=10)
+#quartz(height=6,width=10)
+par(mfrow=c(2,2))
+hist(propdorm_Xpre, xlim=c(0,1))
+hist(propdorm_Ypre,xlim=c(0,1))
+hist(propdorm_Xpost,xlim=c(0,1))
+hist(propdorm_Ypost,xlim=c(0,1))
+
+mean(propdorm_Xpre);sd(propdorm_Xpre)#0.257 (0.052 plants dormant in uncleared prior to clearing
+mean(propdorm_Ypre);sd(propdorm_Ypre)#0.219 (0.050)plants dormant in cleared prior to clearing
+mean(propdorm_Xpost);sd(propdorm_Xpost)#0.10 (0.06) plants dormant in uncleared post clearing
+mean(propdorm_Ypost);sd(propdorm_Ypost)#0.094 (0.069) plants dormant in cleared post clearing
+
+####Now lifespan:
+##test:
+#phiV=phiV_Ypost
+#veg.rep=veg.rep_Ypost
+#pdormV=pdormV_Ypost
+#phiR=phiR_Ypost
+#rep.veg=rep.veg_Ypost
+#pdormR=pdormR_Ypost
+get.lifespan<- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR){
+  lifespan_med= array()
+  #lifespan_95th= array()
+  #lifespan_rep_med= array()
+  #lifespan_rep_95th= array()
+  #nyrs_fl= array()
+  for (i in 1:length(phiV)){
+    tmx = c(phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i], phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i],
+            phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i], phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i],
+            phiV[i]*(1-veg.rep[i])*(1-pdormV[i]), phiR[i]*rep.veg[i]*(1-pdormV[i]), phiV[i]*(1-veg.rep[i])*(1-pdormV[i]), phiR[i]*rep.veg[i]*(1-pdormV[i]),
+            phiV[i]*veg.rep[i]*(1-pdormR[i]), phiR[i]*(1-rep.veg[i])*(1-pdormR[i]), phiV[i]*veg.rep[i]*(1-pdormR[i]), phiR[i]*(1-rep.veg[i])*(1-pdormR[i]))
+    tmx = matrix(tmx, nrow = 4, byrow = T)
+    ##### one way to calculate life span - calculate the probability of still being alive i years into the future
+    n0 = c(0,0,1000,0)
+    nsum = array()
+    flwrsum = array()
+    for(j in 1:200){
+      n1 = tmx%*%n0
+      nsum[j] = sum(n1)
+      flwrsum[j] = n1[4]
+      n0 = n1
+    }#
+    lifespan_med[i]= min(which(nsum <500)) # 
+    #nyrs_fl[i]=sum(flwrsum)/1000 # number of years flowering, over an average lifetime = 1.9 without clearing, 11.6 with
+  }
+  return (lifespan_med)
+}
+lifespan_Xpre<-get.lifespan(phiV_Xpre,veg.rep_Xpre,pdormV_Xpre,phiR_Xpre,rep.veg_Xpre,pdormR_Xpre)
+lifespan_Ypre<-get.lifespan(phiV_Ypre,veg.rep_Ypre,pdormV_Ypre,phiR_Ypre,rep.veg_Ypre,pdormR_Ypre)
+lifespan_Xpost<-get.lifespan(phiV_Xpost,veg.rep_Xpost,pdormV_Xpost,phiR_Xpost,rep.veg_Xpost,pdormR_Xpost)
+lifespan_Ypost<-get.lifespan(phiV_Ypost,veg.rep_Ypost,pdormV_Ypost,phiR_Ypost,rep.veg_Ypost,pdormR_Ypost)
+lifespan_Xpost2<-lifespan_Xpost[-(which(lifespan_Xpost=="Inf"))]
+lifespan_Ypost2<-lifespan_Ypost[-(which(lifespan_Ypost=="Inf"))]
+
+###Length of each bout of dormancy
+# even though clearing does not change the probability of dormancy per se, it could change the expected proportion of dormant plants via changes in other vital rates.
+get.lengthdorm <- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR){
+  mydorm_all=matrix(data=NA,nrow=length(phiV),ncol=11,byrow=TRUE)
+  mnlengthdor=array()
+  for (i in 1:length(phiV)){
+    tmx.dorm = c(phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i], phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i],
+                 phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i], phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i],
+                 0,0,0,0,0,0,0,0)
+    tmx.dorm = matrix(tmx.dorm, nrow = 4, byrow = T)
+    # length of dormancy starting from dormant veg
+    n0 = c(1000,0,0,0)
+    nsum = array()
+    for(j in 1:100){
+      n1 = tmx.dorm%*%n0
+      nsum[j] = sum(n1)
+      n0 = n1
+    }
+    mydorm = c(1, nsum[1:10]/1000)/(1+sum(nsum)/1000)
+    mydorm_all[i,]= mydorm
+    numinds<-mydorm*1000
+    dormls<-array()
+    for (k in 1:length(numinds)){
+      inddormls<-c(rep(k,times=numinds[k]))
+      dormls<-c(dormls,inddormls)
+    }
+    mnlengthdor[i]<-mean(dormls, na.rm=T)
+  }
+  return(mnlengthdor)#
+}
+lengthdorm_Xpre<-get.lengthdorm(phiV_Xpre,veg.rep_Xpre,pdormV_Xpre,phiR_Xpre,rep.veg_Xpre,pdormR_Xpre)
+lengthdorm_Ypre<-get.lengthdorm(phiV_Ypre,veg.rep_Ypre,pdormV_Ypre,phiR_Ypre,rep.veg_Ypre,pdormR_Ypre)
+lengthdorm_Xpost<-get.lengthdorm(phiV_Xpost,veg.rep_Xpost,pdormV_Xpost,phiR_Xpost,rep.veg_Xpost,pdormR_Xpost)
+lengthdorm_Ypost<-get.lengthdorm(phiV_Ypost,veg.rep_Ypost,pdormV_Ypost,phiR_Ypost,rep.veg_Ypost,pdormR_Ypost)
+
+###Now, calculate length of each bout of dormancy and proportion dormant plant, starting with reproductive plants
+get.lengthdorm_flow <- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR){
+  mnlengthdor=array()
+  mydorm_all=matrix(data=NA,nrow=length(phiV),ncol=11,byrow=TRUE)
+  for (i in 1:length(phiV)){
+    tmx.dorm = c(phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i], phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i],
+                 phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i], phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i],
+                 0,0,0,0,0,0,0,0)
+    tmx.dorm = matrix(tmx.dorm, nrow = 4, byrow = T)
+    # length of dormancy starting from dormant flowering
+    n0_flow = c(0,1000,0,0)
+    nsum_flow = array()
+    for(j in 1:100){
+      n1_flow = tmx.dorm%*%n0_flow
+      nsum_flow[j] = sum(n1_flow)
+      n0_flow = n1_flow
+    }
+    mydorm_flow = c(1, nsum_flow[1:10]/1000)/(1+sum(nsum_flow)/1000)
+    #prop_dorm1yr_flow[i]= mydorm_flow[1]
+    mydorm_all[i,]= mydorm_flow
+    numinds<-mydorm_flow*1000
+    dormls<-array()
+    for (k in 1:length(numinds)){
+      inddormls<-c(rep(k,times=numinds[k]))
+      dormls<-c(dormls,inddormls)
+    }
+    mnlengthdor[i]<-mean(dormls, na.rm=T)
+  }
+  return(mnlengthdor)#
+}
+lengthdorm_flow_Xpre<-get.lengthdorm_flow(phiV_Xpre,veg.rep_Xpre,pdormV_Xpre,phiR_Xpre,rep.veg_Xpre,pdormR_Xpre)
+lengthdorm_flow_Ypre<-get.lengthdorm_flow(phiV_Ypre,veg.rep_Ypre,pdormV_Ypre,phiR_Ypre,rep.veg_Ypre,pdormR_Ypre)
+lengthdorm_flow_Xpost<-get.lengthdorm_flow(phiV_Xpost,veg.rep_Xpost,pdormV_Xpost,phiR_Xpost,rep.veg_Xpost,pdormR_Xpost)
+lengthdorm_flow_Ypost<-get.lengthdorm_flow(phiV_Ypost,veg.rep_Ypost,pdormV_Ypost,phiR_Ypost,rep.veg_Ypost,pdormR_Ypost)
+
+##Figures
+#2x2table for each vital rate with first column control, second column logged
+#if model not loaded, then use model sample files to get estinat
+ms3a<-read.csv("isotria2stagemodsum_complex.csv", header=T)
+rownames(ms3a)<-ms3a[,1]
+surv_veg<-as.data.frame(rbind(ms3a$mean[grep("phiA0",substr(rownames(ms3a),1,5))],ms3a$mean[grep("phiA1",substr(rownames(ms3a),1,5))]))
+surv_rep<-as.data.frame(rbind(ms3a$mean[grep("phiB0",substr(rownames(ms3a),1,5))],ms3a$mean[grep("phiB1",substr(rownames(ms3a),1,5))]))
+emer_veg<-as.data.frame(rbind(ms3a$mean[grep("pA0",substr(rownames(ms3a),1,3))],ms3a$mean[grep("pA1",substr(rownames(ms3a),1,3))]))
+emer_rep<-as.data.frame(rbind(ms3a$mean[grep("pB0",substr(rownames(ms3a),1,3))],ms3a$mean[grep("pB1",substr(rownames(ms3a),1,3))]))
+trans_vr<-as.data.frame(rbind(ms3a$mean[grep("psiA0",substr(rownames(ms3a),1,5))],ms3a$mean[grep("psiA1",substr(rownames(ms3a),1,5))]))
+trans_rv<-as.data.frame(rbind(ms3a$mean[grep("psiB0",substr(rownames(ms3a),1,5))],ms3a$mean[grep("psiB1",substr(rownames(ms3a),1,5))]))
+
+surv_veg_med<-as.data.frame(rbind(ms3a$X50.[grep("phiA0",substr(rownames(ms3a),1,5))],ms3a$X50.[grep("phiA1",substr(rownames(ms3a),1,5))]))
+surv_rep_med<-as.data.frame(rbind(ms3a$X50.[grep("phiB0",substr(rownames(ms3a),1,5))],ms3a$X50.[grep("phiB1",substr(rownames(ms3a),1,5))]))
+emer_veg_med<-as.data.frame(rbind(ms3a$X50.[grep("pA0",substr(rownames(ms3a),1,3))],ms3a$X50.[grep("pA1",substr(rownames(ms3a),1,3))]))
+emer_rep_med<-as.data.frame(rbind(ms3a$X50.[grep("pB0",substr(rownames(ms3a),1,3))],ms3a$X50.[grep("pB1",substr(rownames(ms3a),1,3))]))
+trans_vr_med<-as.data.frame(rbind(ms3a$X50.[grep("psiA0",substr(rownames(ms3a),1,5))],ms3a$X50.[grep("psiA1",substr(rownames(ms3a),1,5))]))
+trans_rv_med<-as.data.frame(rbind(ms3a$X50.[grep("psiB0",substr(rownames(ms3a),1,5))],ms3a$X50.[grep("psiB1",substr(rownames(ms3a),1,5))]))
+
+colnames(surv_veg)<-c("control","logged")
+colnames(surv_rep)<-c("control","logged")
+colnames(emer_veg)<-c("control","logged")
+colnames(emer_rep)<-c("control","logged")
+colnames(trans_vr)<-c("control","logged")
+colnames(trans_rv)<-c("control","logged")
+
+colnames(surv_veg_med)<-c("control","logged")
+colnames(surv_rep_med)<-c("control","logged")
+colnames(emer_veg_med)<-c("control","logged")
+colnames(emer_rep_med)<-c("control","logged")
+colnames(trans_vr_med)<-c("control","logged")
+colnames(trans_rv_med)<-c("control","logged")
+
+##use code below if model not loaded:
+surv_veg_q2.5<-c(ms3a$X2.5.[grep("phiA0",substr(rownames(ms3a),1,5))],ms3a$X2.5.[grep("phiA1",substr(rownames(ms3a),1,5))])
+surv_rep_q2.5<-c(ms3a$X2.5.[grep("phiB0",substr(rownames(ms3a),1,5))],ms3a$X2.5.[grep("phiB1",substr(rownames(ms3a),1,5))])
+trans_vr_q2.5<-c(ms3a$X2.5.[grep("psiA0",substr(rownames(ms3a),1,5))],ms3a$X2.5.[grep("psiA1",substr(rownames(ms3a),1,5))])
+trans_rv_q2.5<-c(ms3a$X2.5.[grep("psiB0",substr(rownames(ms3a),1,5))],ms3a$X2.5.[grep("psiB1",substr(rownames(ms3a),1,5))])
+emer_veg_q2.5<-c(ms3a$X2.5.[grep("pA0",substr(rownames(ms3a),1,3))],ms3a$X2.5.[grep("pA1",substr(rownames(ms3a),1,3))])
+emer_rep_q2.5<-c(ms3a$X2.5.[grep("pB0",substr(rownames(ms3a),1,3))],ms3a$X2.5.[grep("pB1",substr(rownames(ms3a),1,3))])
+
+surv_veg_q97.5<-c(ms3a$X97.5.[grep("phiA0",substr(rownames(ms3a),1,5))],ms3a$X97.5.[grep("phiA1",substr(rownames(ms3a),1,5))])
+surv_rep_q97.5<-c(ms3a$X97.5.[grep("phiB0",substr(rownames(ms3a),1,5))],ms3a$X97.5.[grep("phiB1",substr(rownames(ms3a),1,5))])
+trans_vr_q97.5<-c(ms3a$X97.5.[grep("psiA0",substr(rownames(ms3a),1,5))],ms3a$X97.5.[grep("psiA1",substr(rownames(ms3a),1,5))])
+trans_rv_q97.5<-c(ms3a$X97.5.[grep("psiB0",substr(rownames(ms3a),1,5))],ms3a$X97.5.[grep("psiB1",substr(rownames(ms3a),1,5))])
+emer_veg_q97.5<-c(ms3a$X97.5.[grep("pA0",substr(rownames(ms3a),1,3))],ms3a$X97.5.[grep("pA1",substr(rownames(ms3a),1,3))])
+emer_rep_q97.5<-c(ms3a$X97.5.[grep("pB0",substr(rownames(ms3a),1,3))],ms3a$X97.5.[grep("pB1",substr(rownames(ms3a),1,3))])
+#Figure 3, of vital rates
+x<-c(1,2,3,4)
+x2<-c(1,3,2,4)
+windows(height=6,width=7)
+quartz(height=6,width=7)
+par(mfrow=c(3,1),mar=c(.5,4,1,.5), oma=c(3,.5,.5,.5))
+#survival
+plot(x-.05,c(surv_veg$control,surv_veg$logged), pch=21, bg="black", ylim=c(0,1), ylab="Survival", xaxt="n", cex=1.5, xlab="", xlim=c(0.75,4.25), cex.lab=1.2)
+abline(v=2.5,lty=1, lwd=2)
+abline(v=1.5,lty=2,col="gray", lwd=2)
+abline(v=3.5,lty=2,col="gray", lwd=2)
+
+arrows(x2-.05,surv_veg_q2.5,x2-.05,surv_veg_q97.5, code=0,angle=90, length=0.1)
+arrows(x2+.05,surv_rep_q2.5,x2+.05,surv_rep_q97.5, code=0,angle=90, length=0.1)
+points(x-.05,c(surv_veg$control,surv_veg$logged),pch=21, bg="black", cex=1.5)
+points(x+.05,c(surv_rep$control,surv_rep$logged),pch=21, bg="white", cex=1.5)
+
+axis(side=1,at=c(1.5,3.5),labels=c("Control","Logged" ),line=-15, tick=F, cex.axis=1.2)
+legend("bottomright",legend=c("Vegetative", "Reproductive"),pch=21,pt.cex=1.5,pt.bg=c("black","white"), bty="n")
+#Dormancy(=1-)Emergence
+plot(x-.05,c(1-emer_veg$control,1-emer_veg$logged), pch=21, bg="black", ylim=c(0,1), ylab="Dormancy", xaxt="n", cex=1.5, xlab="", xlim=c(0.75,4.25), cex.lab=1.2)
+abline(v=2.5,lty=1, lwd=2)
+abline(v=1.5,lty=2,col="gray", lwd=2)
+abline(v=3.5,lty=2,col="gray", lwd=2)
+arrows(x2-.05,1-emer_veg_q2.5,x2-.05,1-emer_veg_q97.5, code=0,angle=90, length=0.1)
+arrows(x2+.05,1-emer_rep_q2.5,x2+.05,1-emer_rep_q97.5, code=0,angle=90, length=0.1)
+points(x+.05,c(1-emer_rep$control,1-emer_rep$logged),pch=21, bg="white", cex=1.5)
+points(x-.05,c(1-emer_veg$control,1-emer_veg$logged),pch=21, bg="black", cex=1.5)
+#transition
+plot(x-.05,c(trans_vr$control,trans_vr$logged), pch=21, bg="black", ylim=c(0,1), ylab="Transition", xaxt="n", cex=1.5, xlab="", xlim=c(0.75,4.25), cex.lab=1.2)
+abline(v=2.5,lty=1, lwd=2)
+arrows(x2-.05,trans_vr_q2.5,x2-.05,trans_vr_q97.5, code=0,angle=90, length=0.1)
+arrows(x2+.05,trans_rv_q2.5,x2+.05,trans_rv_q97.5, code=0,angle=90, length=0.1)
+points(x-.05,c(trans_vr$control,trans_vr$logged),pch=21, bg="black", cex=1.5)
+points(x+.05,c(trans_rv$control,trans_rv$logged),pch=21, bg="white", cex=1.5)
+abline(v=1.5,lty=2,col="gray", lwd=2)
+abline(v=3.5,lty=2,col="gray", lwd=2)
+legend("topright",legend=c("Vegetative->Reproductive", "Reproductive->Vegetative"),pch=21,pt.cex=1.5,pt.bg=c("black","white"), bty="n")
+axis(side=1,at=x,labels=c("pre","post","pre","post"))
+axis(side=1,at=x,labels=c("(1982-1997)","(1998-2015)","(1982-1997)","(1998-2015)"), line=1.2,tick=F)
+
+#####Figure 4,  length of dormancy, lifepsan, etc
+x<-c(1,2,3,4)
+windows(height=6,width=7)
+quartz(height=6,width=7)
+par(mfrow=c(3,1),mar=c(.5,4,1,.5), oma=c(3,.5,.5,.5))
+
+#lifespan
+plot(x,c(mean(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost2, na.rm=T),mean(lifespan_Ypre, na.rm=T),mean(lifespan_Ypost2, na.rm=T)), pch=21, bg="gray", ylim=c(0,100), ylab="Lifespan (yrs)", xaxt="n", cex=1.5, xlab="", xlim=c(0.75,4.25), cex.lab=1.2)
+abline(v=2.5,lty=1, lwd=2)
+abline(v=1.5,lty=2,col="gray", lwd=2)
+abline(v=3.5,lty=2,col="gray", lwd=2)
+arrows(x,c(mean(lifespan_Xpre, na.rm=T)-sd(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost2, na.rm=T)-sd(lifespan_Xpost2, na.rm=T),mean(lifespan_Ypre, na.rm=T)-sd(lifespan_Ypre, na.rm=T),mean(lifespan_Ypost2, na.rm=T)-sd(lifespan_Ypost2, na.rm=T)),x,c(mean(lifespan_Xpre, na.rm=T)+sd(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost2, na.rm=T)+sd(lifespan_Xpost2, na.rm=T),mean(lifespan_Ypre, na.rm=T)+sd(lifespan_Ypre, na.rm=T),mean(lifespan_Ypost2, na.rm=T)+sd(lifespan_Ypost2, na.rm=T)), code=0,angle=90, length=0.1)
+points(x,c(mean(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost2, na.rm=T),mean(lifespan_Ypre, na.rm=T),mean(lifespan_Ypost2, na.rm=T)), pch=21, bg="gray", cex=1.5)
+axis(side=1,at=c(1.5,3.5),labels=c("Control","Logged" ),line=-14.5, tick=F, cex.axis=1.2)
+
+#proportion of plants dormant
+plot(x,c(mean(propdorm_Xpre, na.rm=T),mean(propdorm_Xpost, na.rm=T),mean(propdorm_Ypre, na.rm=T),mean(propdorm_Ypost, na.rm=T)), pch=21, bg="gray", ylim=c(0,1), ylab="Proportion Dormant", xaxt="n", cex=1.5, xlab="", xlim=c(0.75,4.25), cex.lab=1.2)
+abline(v=2.5,lty=1, lwd=2)
+abline(v=1.5,lty=2,col="gray", lwd=2)
+abline(v=3.5,lty=2,col="gray", lwd=2)
+arrows(x,c(mean(propdorm_Xpre, na.rm=T)-sd(propdorm_Xpre, na.rm=T),mean(propdorm_Xpost, na.rm=T)-sd(propdorm_Xpost, na.rm=T),mean(propdorm_Ypre, na.rm=T)-sd(propdorm_Ypre, na.rm=T),mean(propdorm_Ypost, na.rm=T)-sd(propdorm_Ypost, na.rm=T)),x,c(mean(propdorm_Xpre, na.rm=T)+sd(propdorm_Xpre, na.rm=T),mean(propdorm_Xpost, na.rm=T)+sd(propdorm_Xpost, na.rm=T),mean(propdorm_Ypre, na.rm=T)+sd(propdorm_Ypre, na.rm=T),mean(propdorm_Ypost, na.rm=T)+sd(propdorm_Ypost, na.rm=T)), code=0,angle=90, length=0.1)
+points(x,c(mean(propdorm_Xpre, na.rm=T),mean(propdorm_Xpost, na.rm=T),mean(propdorm_Ypre, na.rm=T),mean(propdorm_Ypost, na.rm=T)), pch=21, bg="gray", cex=1.5)
+#Length of dormancy, starting from veg (black) or rep (white)
+plot(x-.05,c(mean(lengthdorm_Xpre, na.rm=T),mean(lengthdorm_Xpost, na.rm=T),mean(lengthdorm_Ypre, na.rm=T),mean(lengthdorm_Ypost, na.rm=T)), pch=21, bg="black", ylim=c(0,2), ylab="Dormancy length (yrs)", xaxt="n", cex=1.5, xlab="", xlim=c(0.75,4.25), cex.lab=1.2)
+abline(v=2.5,lty=1, lwd=2)
+abline(v=1.5,lty=2,col="gray", lwd=2)
+abline(v=3.5,lty=2,col="gray", lwd=2)
+arrows(x-.05,c(mean(lengthdorm_Xpre, na.rm=T)-sd(lengthdorm_Xpre, na.rm=T),mean(lengthdorm_Xpost, na.rm=T)-sd(lengthdorm_Xpost, na.rm=T),mean(lengthdorm_Ypre, na.rm=T)-sd(lengthdorm_Ypre, na.rm=T),mean(lengthdorm_Ypost, na.rm=T)-sd(lengthdorm_Ypost, na.rm=T)),x-.05,c(mean(lengthdorm_Xpre, na.rm=T)+sd(lengthdorm_Xpre, na.rm=T),mean(lengthdorm_Xpost, na.rm=T)+sd(lengthdorm_Xpost, na.rm=T),mean(lengthdorm_Ypre, na.rm=T)+sd(lengthdorm_Ypre, na.rm=T),mean(lengthdorm_Ypost, na.rm=T)+sd(lengthdorm_Ypost, na.rm=T)), code=0,angle=90, length=0.1)
+points(x-.05,c(mean(lengthdorm_Xpre, na.rm=T),mean(lengthdorm_Xpost, na.rm=T),mean(lengthdorm_Ypre, na.rm=T),mean(lengthdorm_Ypost, na.rm=T)), pch=21, bg="black", cex=1.5)
+arrows(x+.05,c(mean(lengthdorm_flow_Xpre, na.rm=T)-sd(lengthdorm_flow_Xpre, na.rm=T),mean(lengthdorm_flow_Xpost, na.rm=T)-sd(lengthdorm_flow_Xpost, na.rm=T),mean(lengthdorm_flow_Ypre, na.rm=T)-sd(lengthdorm_flow_Ypre, na.rm=T),mean(lengthdorm_flow_Ypost, na.rm=T)-sd(lengthdorm_flow_Ypost, na.rm=T)),x+.05,c(mean(lengthdorm_flow_Xpre, na.rm=T)+sd(lengthdorm_flow_Xpre, na.rm=T),mean(lengthdorm_flow_Xpost, na.rm=T)+sd(lengthdorm_flow_Xpost, na.rm=T),mean(lengthdorm_flow_Ypre, na.rm=T)+sd(lengthdorm_flow_Ypre, na.rm=T),mean(lengthdorm_flow_Ypost, na.rm=T)+sd(lengthdorm_flow_Ypost, na.rm=T)), code=0,angle=90, length=0.1)
+points(x+.05,c(mean(lengthdorm_flow_Xpre, na.rm=T),mean(lengthdorm_flow_Xpost, na.rm=T),mean(lengthdorm_flow_Ypre, na.rm=T),mean(lengthdorm_flow_Ypost, na.rm=T)), pch=21, bg="white", cex=1.5)
+axis(side=1,at=x,labels=c("pre","post","pre","post"))
+axis(side=1,at=x,labels=c("(1982-1997)","(1998-2015)","(1982-1997)","(1998-2015)"), line=1.2,tick=F)
+legend("bottomright",legend=c("Vegetative", "Reproductive"),pch=21,pt.cex=1.5,pt.bg=c("black","white"), bty="n")
+
+
