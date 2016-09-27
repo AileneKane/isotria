@@ -1,0 +1,16 @@
+## Form a transition matrix, here it is called INSTANT, and it is a 8 x 8 matrix.
+
+## Using popbio-package, form the fundamental matrix N
+
+N.ins = fundamental.matrix(INSTANT) 
+
+## The fundamental matrix or mean of the time spent in each stage class (you could get variances as well, N.ins$var)
+
+N.ins$N    
+
+
+## Vector of ones (8, because the transition matrix is 8 x 8)
+e.one =as.matrix(c(rep(1,8)))
+
+## Taking the column sum of the fundamental matrix which are the mean life times for plants in a given stage (see Caswell 2001)
+life.ins =as.vector(t(e.one)%*%N.ins$N)

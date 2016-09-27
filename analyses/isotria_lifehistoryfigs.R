@@ -45,17 +45,17 @@ plot(pop_x[,1]~rownames(pop_x),type="l",ylab="# Individuals Observed", xlab="Yea
 lines(pop_x[,2]~rownames(pop_x), lty=1, lwd=2)
 lines(pop_y[,1]~rownames(pop_y), lty=3,col="darkgray", lwd=2)
 lines(pop_y[,2]~rownames(pop_y), lty=1, col="darkgray", lwd=2)
-text(2015, pop_x[31,1],labels="Control Group, X",adj=0,cex=1.1)
-text(2015.2, pop_x[31,1]-2,labels="(Vegetative)",adj=0,cex=1.1)
+text(2015, pop_x[31,1]+1,labels="Control Group, X",adj=0,cex=1.1)
+text(2015.2, pop_x[31,1]-1.5,labels="(Vegetative)",adj=0,cex=1.1)
 
 text(2015, pop_y[31,1],labels="Cleared Group, Y",adj=0,cex=1.1)
-text(2015.2, pop_y[31,1]-2,labels="(Vegetative)",adj=0,cex=1.1)
+text(2015.2, pop_y[31,1]-2.5,labels="(Vegetative)",adj=0,cex=1.1)
 
 text(2015, pop_x[31,2],labels="Control Group, X",adj=0,cex=1.1)
-text(2015.2, pop_x[31,2]-2,labels="(Reproductive)",adj=0,cex=1.1)
+text(2015.2, pop_x[31,2]-2.5,labels="(Reproductive)",adj=0,cex=1.1)
 
 text(2015,pop_y[31,2],labels="Cleared Group, Y",adj=0,cex=1.1)
-text(2015.2, pop_y[31,2]-2,labels="(Reproductive)",adj=0,cex=1.1)
+text(2015.2, pop_y[31,2]-2.5,labels="(Reproductive)",adj=0,cex=1.1)
 
 abline(v=1997,lty=2,col="gray", lwd=3)
 axis(side=1,at=rownames(pop_x), labels=TRUE, cex.axis=1.3)
@@ -128,7 +128,7 @@ mean(propdorm_Ypre);sd(propdorm_Ypre)#0.219 (0.050)plants dormant in cleared pri
 mean(propdorm_Xpost);sd(propdorm_Xpost)#0.10 (0.06) plants dormant in uncleared post clearing
 mean(propdorm_Ypost);sd(propdorm_Ypost)#0.094 (0.069) plants dormant in cleared post clearing
 
-####Now lifespan:
+####Now life expectancy:
 ##test:
 #phiV=phiV_Ypost
 #veg.rep=veg.rep_Ypost
@@ -172,13 +172,13 @@ get.lifespan<- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR){
     n0 = c(0,0,1000,0)#lifespan starting from vegetative
     nsum = array()
     flwrsum = array()
-    for(j in 1:100){
+    for(j in 1:1800){
       n1 = tmx%*%n0
       nsum[j] = sum(n1)
       flwrsum[j] = n1[4]
       n0 = n1
     }#
-    lifespan_med[i]= min(which(nsum <500)) # 
+    lifespan_med[i]= min(which(nsum <900)) # this is actually the median survival time
     #nyrs_fl[i]=sum(flwrsum)/1000 # number of years flowering, over an average lifetime = 1.9 without clearing, 11.6 with
   }
   return (lifespan_med)
@@ -190,7 +190,11 @@ lifespan_Ypost<-get.lifespan(phiV_Ypost,veg.rep_Ypost,pdormV_Ypost,phiR_Ypost,re
 lifespan_Xpost2<-lifespan_Xpost[-(which(lifespan_Xpost=="Inf"))]
 lifespan_Ypost2<-lifespan_Ypost[-(which(lifespan_Ypost=="Inf"))]
 
-###
+#Alternatively, life expectancy can be calculated as -1/ln(s)
+LEV_Xpre<--1/(log(phiV_Xpre))#median=5.5
+LEV_Xpost<--1/(log(phiV_Xpost))#median=7.69
+LEV_Ypre<--1/(log(phiV_Ypre))#median=6.31
+LEV_Ypost<--1/(log(phiV_Ypost))#median=60
 
 get.lifespan_flow<- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR){
   lifespan_med= array()
@@ -208,13 +212,13 @@ get.lifespan_flow<- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR){
     n0 = c(0,0,0,1000)#lifespan starting from vegetative
     nsum = array()
     flwrsum = array()
-    for(j in 1:100){
+    for(j in 1:1800){
       n1 = tmx%*%n0
       nsum[j] = sum(n1)
       flwrsum[j] = n1[4]
       n0 = n1
     }#
-    lifespan_med[i]= min(which(nsum <500)) # 
+    lifespan_med[i]= min(which(nsum <900)) # 
     #nyrs_fl[i]=sum(flwrsum)/1000 # number of years flowering, over an average lifetime = 1.9 without clearing, 11.6 with
   }
   return (lifespan_med)
@@ -413,7 +417,7 @@ plot(x,c(mean(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost2, na.rm=T),mean(lifesp
 abline(v=2.5,lty=1, lwd=2)
 abline(v=1.5,lty=2,col="gray", lwd=2)
 abline(v=3.5,lty=2,col="gray", lwd=2)
-lines(x[1:2],c(mean(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost2, na.rm=T)), lty=1)
+lines(x[1:2],c(mean(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost, na.rm=T)), lty=1)
 lines(x[3:4],c(mean(lifespan_Ypre, na.rm=T),mean(lifespan_Ypost2, na.rm=T)), lty=3)
 arrows(xerror,c(mean(lifespan_Xpre, na.rm=T)-sd(lifespan_Xpre, na.rm=T),mean(lifespan_Ypre, na.rm=T)-sd(lifespan_Ypre, na.rm=T),mean(lifespan_Xpost2, na.rm=T)-sd(lifespan_Xpost2, na.rm=T),mean(lifespan_Ypost2, na.rm=T)-sd(lifespan_Ypost2, na.rm=T)),xerror,c(mean(lifespan_Xpre, na.rm=T)+sd(lifespan_Xpre, na.rm=T),mean(lifespan_Ypre, na.rm=T)+sd(lifespan_Ypre, na.rm=T),mean(lifespan_Xpost2, na.rm=T)+sd(lifespan_Xpost2, na.rm=T),mean(lifespan_Ypost2, na.rm=T)+sd(lifespan_Ypost2, na.rm=T)), code=0,angle=90, length=0.1)
 points(x,c(mean(lifespan_Xpre, na.rm=T),mean(lifespan_Xpost2, na.rm=T),mean(lifespan_Ypre, na.rm=T),mean(lifespan_Ypost2, na.rm=T)), pch=21, bg=c("black","black","white","white"), cex=1.5)
@@ -457,7 +461,11 @@ noninf.params<-cbind(phiV_Ypost[which(lifespan_Ypost!="Inf")],veg.rep_Ypost[whic
 t.test(noninf.params[,6],inf.params[,6])
 high.params<-cbind(phiV_Ypost[which(lifespan_Ypost>200)],veg.rep_Ypost[which(lifespan_Ypost>200)],pdormV_Ypost[which(lifespan_Ypost>200)],phiR_Ypost[which(lifespan_Ypost>200)],rep.veg_Ypost[which(lifespan_Ypost>200)],pdormR_Ypost[which(lifespan_Ypost>200)])
 low.params<-cbind(phiV_Ypost[which(lifespan_Ypost<200)],veg.rep_Ypost[which(lifespan_Ypost<200)],pdormV_Ypost[which(lifespan_Ypost<200)],phiR_Ypost[which(lifespan_Ypost<200)],rep.veg_Ypost[which(lifespan_Ypost<200)],pdormR_Ypost[which(lifespan_Ypost<200)])
-t.test(high.params[,3],low.params[,3])
+lowlow.params<-cbind(phiV_Ypost[which(lifespan_Ypost<10)],veg.rep_Ypost[which(lifespan_Ypost<10)],pdormV_Ypost[which(lifespan_Ypost<10)],phiR_Ypost[which(lifespan_Ypost<10)],rep.veg_Ypost[which(lifespan_Ypost<10)],pdormR_Ypost[which(lifespan_Ypost<10)])
+t.test(lowlow.params[,5],low.params[,5])
 #vital rates from high lifespan estimates (>200 years) have the following differences from low lifespan estimates:
-#1) higher phis for both reproductive and veg plants ()
+#1) higher phis for both reproductive and veg plants
 #2) lower transition from reproductive to vegetative rep.veg_Ypost
+#vital rates frmo low low lifespand estimates (<10 years) have the following
+#1) higher phis for both reproductive and veg plants 
+#2) higher transition from reproductive to vegetative rep.veg_Ypost
