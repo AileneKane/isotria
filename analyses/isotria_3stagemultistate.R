@@ -316,11 +316,11 @@ nc <- 3
 # Call JAGS from R #
 #complex model
 ms3.rf <- jags(jags.data, inits, parameters, "ms-ranef3stages.jags", n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb, parallel=T)
-print(ms3.rf, digits=3)
+            print(ms3.rf, digits=3)
 
 ###save all samples
 mod.samples_3stage<- as.data.frame(do.call("rbind", ms3.rf$samples))
-write.csv(mod.samples_3stage,"msmod_samples_3stage.csv",row.names=T)
+write.csv(mod.samples_3stage,"msmod_samples_3stage2.csv",row.names=T)
 mod.samples_3stage<-read.csv("msmod_samples_complex.csv", header=T)
 
 ##Figures
