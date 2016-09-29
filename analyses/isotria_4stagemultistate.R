@@ -374,7 +374,7 @@ zst1[6,24:31]<-NA
 zst1[5,24:31]<-NA
 zst1[60,31]<-NA
 zst1[255,11:31]<-NA#unless i include this, i get an error in node z[255,11]: Cannot normalize density
-
+#temporary fixes to try to
 # Bundle data
 jags.data <- list(y = isoall_CH.ms, f = f, n.occasions = dim(isoall_CH.ms)[2], nind = dim(isoall_CH.ms)[1], z = known.state.ms(isoall_CH.ms), group=group, x=time_log, x1=logged_yrs2)
 
