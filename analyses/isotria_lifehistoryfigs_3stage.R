@@ -111,10 +111,10 @@ fF_Ypost<-mod.samples[,which(colnames(mod.samples)=="fF1.2.")]
 fU_Ypost<-mod.samples[,which(colnames(mod.samples)=="fU1.2.")]
 
 ###Porportion of plants dormant in each condition
-get.propdorm <- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR) {
+get.propdorm <- function(sV,fV,dV,sF,fF,dF,dF,sU,fU,dU) {
   prop.dorm= array()
   for (i in 1:length(phiV)){
-    tmx = c(phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i], phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i],
+    tmx = c(sV[i]*(1-fvi])*(pdormV)1-dv[i], phiR[i]*rep.veg[i]*pdormV[i], phiV[i]*(1-veg.rep[i])*pdormV[i], phiR[i]*rep.veg[i]*pdormV[i],
             phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i], phiV[i]*veg.rep[i]*pdormR[i], phiR[i]*(1-rep.veg[i])*pdormR[i],
             phiV[i]*(1-veg.rep[i])*(1-pdormV[i]), phiR[i]*rep.veg[i]*(1-pdormV[i]), phiV[i]*(1-veg.rep[i])*(1-pdormV[i]), phiR[i]*rep.veg[i]*(1-pdormV[i]),
             phiV[i]*veg.rep[i]*(1-pdormR[i]), phiR[i]*(1-rep.veg[i])*(1-pdormR[i]), phiV[i]*veg.rep[i]*(1-pdormR[i]), phiR[i]*(1-rep.veg[i])*(1-pdormR[i]))
@@ -144,32 +144,6 @@ mean(propdorm_Xpost);sd(propdorm_Xpost)#0.10 (0.06) plants dormant in uncleared 
 mean(propdorm_Ypost);sd(propdorm_Ypost)#0.094 (0.069) plants dormant in cleared post clearing
 
 ####Now life expectancy:
-##test:
-#phiV=phiV_Ypost
-#veg.rep=veg.rep_Ypost
-#pdormV=pdormV_Ypost
-#phiR=phiR_Ypost
-#rep.veg=rep.veg_Ypost
-#pdormR=pdormR_Ypost
-
-#to figure out effect of survival on lifepsand estimates, plug in mean values for everything then try changing phi:
-#phiV=0.9999
-#veg.rep=0.47
-#pdormV=0.30
-#phiR=0.99
-#rep.veg=0.02
-#pdormR=0.024
-#with theabove mean parameters, lifespan_med is 30. 
-#if i change phiV to 0.98, lifepsan_med is 35
-#to 0.99, liefepsan=40; change of phiV frmo .99 to .999 moves lifespan from  69 to 74
-#both phiV and phiR changed to .99; lifespan goes up to 69;
-#with PhiV at .99 and when phiR changed frmo .99 to .999-.9933, med lifespan=Inf
-#with PhiV at .99 and when phiR .991, med lifespan=77
-#with PhiV at .99 and when phiR .992, med lifespan=85
-#with PhiV at .99 and when phiR .993, med lifespan=97
-#with PhiV at .99 and when phiR .9931, med lifespan=98
-#with PhiV at .99 and when phiR .9932, med lifespan=99
-#with PhiV at .99 and when phiR .99325-8, med lifespan=100
 
 get.lifespan<- function(phiV,veg.rep,pdormV,phiR,rep.veg,pdormR){
   lifespan_med= array()

@@ -321,9 +321,15 @@ ms3.rf <- jags(jags.data, inits, parameters, "ms-ranef3stages.jags", n.chains = 
 ###save all samples
 mod.samples_3stage<- as.data.frame(do.call("rbind", ms3.rf$samples))
 write.csv(mod.samples_3stage,"msmod_samples_3stage2.csv",row.names=T)
-mod.samples_3stage<-read.csv("msmod_samples_complex.csv", header=T)
 
-##Figures
+##Table of model summary, with betas
+mod.sum<-ms3.rf$summary
+write.csv(mod.sum,"isotria3stagemodsum.csv", row.names=T)
+mod.table<-round(subset(mod.sum, select=c("mean","sd","Rhat", "n.eff")), digits=3)
+mod.table2<-rbind(mod.table[which(substr(rownames(mod.table),1,2)=="mu"),],mod.table[which(substr(rownames(mod.table),1,4)=="beta"),])
+write.csv(mod.table2,"isotria3stage_modtable.csv")
+
+##For Figures
 #2x2table for each vital rate with first column control, second column logged
 #first row before logging, second row after logging
 surv_veg<-as.data.frame(rbind(ms3.rf$mean$sV0,ms3.rf$mean$sV1))
@@ -361,9 +367,3 @@ prep_dorm_q97.5<-c(ms3.rf$q97.5$fU0,ms3.rf$q97.5$fU1)
 pdorm_veg_q97.5<-c(ms3.rf$q97.5$dV0,ms3.rf$q97.5$dV1)
 pdorm_rep_q97.5<-c(ms3.rf$q97.5$dF0,ms3.rf$q97.5$dF1)
 pdorm_rep_q97.5<-c(ms3.rf$q97.5$dU0,ms3.rf$q97.5$dU1)
-##Table of model summary, with betas
-mod.sum<-ms3.rf$summary
-write.csv(mod.sum,"isotria3stagemodsum.csv", row.names=T)
-mod.table<-round(subset(mod.sum, select=c("mean","sd","Rhat", "n.eff")), digits=3)
-mod.table2<-rbind(mod.table[which(substr(rownames(mod.table),1,2)=="mu"),],mod.table[which(substr(rownames(mod.table),1,4)=="beta"),])
-write.csv(mod.table2,"isotria3stage_modtable.csv")

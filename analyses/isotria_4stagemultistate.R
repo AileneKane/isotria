@@ -321,6 +321,7 @@ model {
     po[5,i,t,1] <- 0
     po[5,i,t,2] <- 0
     po[5,i,t,3] <- 1
+
     } #t
     } #i
     
@@ -373,8 +374,7 @@ zst1[4,24:31]<-NA
 zst1[6,24:31]<-NA
 zst1[5,24:31]<-NA
 zst1[60,31]<-NA
-zst1[255,11:31]<-NA#unless i include this, i get an error in node z[255,11]: Cannot normalize density
-#temporary fixes to try to
+
 # Bundle data
 jags.data <- list(y = isoall_CH.ms, f = f, n.occasions = dim(isoall_CH.ms)[2], nind = dim(isoall_CH.ms)[1], z = known.state.ms(isoall_CH.ms), group=group, x=time_log, x1=logged_yrs2)
 
@@ -395,51 +395,12 @@ ms4.rf <- jags(jags.data, inits, parameters, "ms-ranef4stages.jags", n.chains = 
 print(ms4.rf, digits=3)
 
 ###save all samples
-mod.samples_3stage<- as.data.frame(do.call("rbind", ms3.rf$samples))
-write.csv(mod.samples_3stage,"msmod_samples_3stage2.csv",row.names=T)
-mod.samples_3stage<-read.csv("msmod_samples_complex.csv", header=T)
+mod.samples_4stage<- as.data.frame(do.call("rbind", ms3.rf$samples))
+write.csv(mod.samples_4stage,"msmod_samples_4stage.csv",row.names=T)
 
-##Figures
-#2x2table for each vital rate with first column control, second column logged
-#first row before logging, second row after logging
-surv_veg<-as.data.frame(rbind(ms3.rf$mean$sV0,ms3.rf$mean$sV1))
-surv_rep<-as.data.frame(rbind(ms3.rf$mean$sF0,ms3.rf$mean$sF1))
-surv_dorm<-as.data.frame(rbind(ms3.rf$mean$sU0,ms3.rf$mean$sU1))
-
-prep_veg<-as.data.frame(rbind(ms3.rf$mean$fV0,ms3.rf$mean$fV1))
-prep_rep<-as.data.frame(rbind(ms3.rf$mean$fF0,ms3.rf$mean$fF1))
-prep_dorm<-as.data.frame(rbind(ms3.rf$mean$fU0,ms3.rf$mean$fU1))
-
-pdorm_veg<-as.data.frame(rbind(ms3.rf$mean$dV0,ms3.rf$mean$dV1))
-pdorm_rep<-as.data.frame(rbind(ms3.rf$mean$dF0,ms3.rf$mean$dF1))
-pdorm_dorm<-as.data.frame(rbind(ms3.rf$mean$dU0,ms3.rf$mean$dU1))
-
-surv_veg_q2.5<-c(ms3.rf$q2.5$sV0,ms3.rf$q2.5$sV1)
-surv_rep_q2.5<-c(ms3.rf$q2.5$sF0,ms3.rf$q2.5$sF1)
-surv_dorm_q2.5<-c(ms3.rf$q2.5$sU0,ms3.rf$q2.5$sU1)
-
-prep_veg_q2.5<-c(ms3.rf$q2.5$fV0,ms3.rf$q2.5$fV1)
-prep_rep_q2.5<-c(ms3.rf$q2.5$fF0,ms3.rf$q2.5$fF1)
-prep_dorm_q2.5<-c(ms3.rf$q2.5$fU0,ms3.rf$q2.5$fU1)
-
-pdorm_veg_q2.5<-c(ms3.rf$q2.5$dV0,ms3.rf$q2.5$dV1)
-pdorm_rep_q2.5<-c(ms3.rf$q2.5$dF0,ms3.rf$q2.5$dF1)
-pdorm_rep_q2.5<-c(ms3.rf$q2.5$dU0,ms3.rf$q2.5$dU1)
-
-surv_veg_q97.5<-c(ms3.rf$q97.5$sV0,ms3.rf$q97.5$sV1)
-surv_rep_q97.5<-c(ms3.rf$q97.5$sF0,ms3.rf$q97.5$sF1)
-surv_dorm_q97.5<-c(ms3.rf$q97.5$sU0,ms3.rf$q97.5$sU1)
-
-prep_veg_q97.5<-c(ms3.rf$q97.5$fV0,ms3.rf$q97.5$fV1)
-prep_rep_q97.5<-c(ms3.rf$q97.5$fF0,ms3.rf$q97.5$fF1)
-prep_dorm_q97.5<-c(ms3.rf$q97.5$fU0,ms3.rf$q97.5$fU1)
-
-pdorm_veg_q97.5<-c(ms3.rf$q97.5$dV0,ms3.rf$q97.5$dV1)
-pdorm_rep_q97.5<-c(ms3.rf$q97.5$dF0,ms3.rf$q97.5$dF1)
-pdorm_rep_q97.5<-c(ms3.rf$q97.5$dU0,ms3.rf$q97.5$dU1)
 ##Table of model summary, with betas
-mod.sum<-ms3.rf$summary
-write.csv(mod.sum,"isotria3stagemodsum.csv", row.names=T)
+mod.sum<-ms4.rf$summary
+write.csv(mod.sum,"isotria4stagemodsum.csv", row.names=T)
 mod.table<-round(subset(mod.sum, select=c("mean","sd","Rhat", "n.eff")), digits=3)
 mod.table2<-rbind(mod.table[which(substr(rownames(mod.table),1,2)=="mu"),],mod.table[which(substr(rownames(mod.table),1,4)=="beta"),])
-write.csv(mod.table2,"isotria3stage_modtable.csv")
+write.csv(mod.table2,"isotria4stage_modtable.csv")
