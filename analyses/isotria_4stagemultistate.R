@@ -70,6 +70,7 @@ isoall_CH[which(isoall_CH==0)]=3#replace 0s wih 3
 #add 4s for when dormant stage =UF
 isoallUF_CH=tapply(isoinds_prev2$dormstageUF,list(isoinds_prev2$UniqueID,isoinds_prev2$Year),sum)#reproductive status
 isoall_CH.ms=isoallUF_CH+isoall_CH
+isoall_CH.ms[which(isoall_CH.ms==4)]<-3
 n.occasions<- dim(isoall_CH.ms)[2]
 #head(isoall_CH.ms)
 get.first <- function(x) min(which(x!=0))
@@ -342,14 +343,14 @@ sink()
 
 #Function to create known latent state z
 ########
-known.state.ms <- function(ch){##removes 3s and 4s and replaces them with NAs, and replaces first observation with NA
+known.state.ms <- function(ch){##removes 3s (and 4s) and replaces them with NAs, and replaces first observation with NA
   state <- ch
   for (i in 1:dim(ch)[1]){
     n1 <- min(which(ch[i,]<3))#
     state[i,n1] <- NA
   }
   state[state==3] <- NA
-  state[state==4] <- NA
+  #state[state==4] <- NA
   return(state)
 }
 ms.init.z <- function(ch, f){#ms.init.z gives starting values of 1 or 2 to all unknown states
@@ -358,7 +359,7 @@ ms.init.z <- function(ch, f){#ms.init.z gives starting values of 1 or 2 to all u
   states <- max(ch, na.rm = TRUE)
   known.states <- 1:2
   v <- which(ch>=3)#which occurences are unknown states (=3 and 4)
-  ch[-v] <- NA#everyhing else besides the 3 and 4s gets an NA
+  ch[-v] <- NA#everything else besides the 3 and 4s gets an NA
   ch[v] <- sample(known.states, length(v), replace = TRUE)##gives all unseen occurrences (3s and 4s) a starting value that is a random sampling of either 1 or 2
   ch[i,n1] <- NA#make first observance an NA (not a 3)
   return(ch)
@@ -374,6 +375,10 @@ zst1[4,24:31]<-NA
 zst1[6,24:31]<-NA
 zst1[5,24:31]<-NA
 zst1[60,31]<-NA
+zst1[255,10:31]<-NA#because of "cannot normalize density" error
+zst1[251,9:31]<-NA#because of "cannot normalize density" error
+zst1[249,22:30]<-1#because
+zst1[246,30:31]<-2#because
 
 # Bundle data
 jags.data <- list(y = isoall_CH.ms, f = f, n.occasions = dim(isoall_CH.ms)[2], nind = dim(isoall_CH.ms)[1], z = known.state.ms(isoall_CH.ms), group=group, x=time_log, x1=logged_yrs2)
@@ -385,7 +390,7 @@ parameters <- c("mean.sV","mean.sF","mean.sUV","mean.sUF", "mean.fV","mean.fF","
 
 # MCMC settings
 ni <- 2500
-nt <- 3
+nt <- 5
 nb <- 500
 nc <- 3
 

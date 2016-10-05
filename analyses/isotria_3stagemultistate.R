@@ -236,7 +236,7 @@ model {
     # Define probabilities of O(t) given S(t) ##first coumn is observed state, last is true state
     po[1,i,t,1] <- 1
     po[1,i,t,2] <- 0
-    po[1,i,t,3] <-0
+    po[1,i,t,3] <- 0
     po[2,i,t,1] <- 0
     po[2,i,t,2] <- 1
     po[2,i,t,3] <- 0
