@@ -66,15 +66,20 @@ isoalleme_CH=tapply(isoinds_prev2$Emerg.x,list(isoinds_prev2$UniqueID,isoinds_pr
 isoallrep_CH=tapply(isoinds_prev2$Repro.x,list(isoinds_prev2$UniqueID,isoinds_prev2$Year),sum)#reproductive status
 isoall_CH=isoalleme_CH+isoallrep_CH
 isoall_CH[which(isoall_CH==0)]=3#replace 0s wih 3
-#isoall_CH.ms[73,23]<-NA#remove case where first observation is a zero/3- makes no sense
 #add 4s for when dormant stage =UF
 isoallUF_CH=tapply(isoinds_prev2$dormstageUF,list(isoinds_prev2$UniqueID,isoinds_prev2$Year),sum)#reproductive status
 isoall_CH.ms=isoallUF_CH+isoall_CH
 isoall_CH.ms[which(isoall_CH.ms==4)]<-3#BAsed on what Nate said, this should not be explicitly coded this way because we can't see this stage
 n.occasions<- dim(isoall_CH.ms)[2]
-#head(isoall_CH.ms)
 get.first <- function(x) min(which(x!=0))
+
 f<-apply(isoall_CH.ms,1,get.first)#first occasion of marking
+#check that first value is always a 1 or 2
+#g<-array(NA, dim=dim(isoall_CH.ms)[1])
+#for (i in 1:dim(isoall_CH.ms)[1]){
+#  g[i]<-isoall_CH.ms[i,f[i]]
+#}
+#g
 ###################################
 ####Add variable with difference among groups x and y before and after logging occurring
 group<-c(rep(1,length(unique(isoinds[isoinds$Group=="X",]$UniqueID))),rep(2,length(unique(isoinds[isoinds$Group=="Y",]$UniqueID))))#group x=control=1, group y=logged=2
@@ -357,23 +362,37 @@ ms.init.z <- function(ch, f){#ms.init.z gives starting values of 1 or 2 to all u
   n1 <- min(which(ch[i,]<3))#
   states <- max(ch, na.rm = TRUE)
   known.states <- 1:2
-  v <- which(ch>=3)#which occurences are unknown states (=3 and 4)
+  v <- which(ch>=3)#which occurences are unknown states (=3)
   ch[-v] <- NA#everything else besides the 3 gets an NA
   ch[v] <- sample(known.states, length(v), replace = TRUE)##gives all unseen occurrences (3s and 4s) a starting value that is a random sampling of either 1 or 2
   ch[i,n1] <- NA#make first observance an NA (not a 3)
   return(ch)
 }
 
+#ch[1]
+
 ch=isoall_CH.ms
 #y = isoall_CH.ms
 #y[73,24]=NA
+#still not sure how to fix the starting values- is it ok for them to be 1 or 2? or do they need to be constrained somehow? this is not clear....
 zst1=ms.init.z(ch,f)
+#a <- which(ch==1)
+#b<-zst[a+1]
+#consecna <- function(x, n=1) {
+  # function to identify elements with n or more consecutive NA values
+ # y <- rle(is.na(x))
+#  y$values <- y$lengths > (n - 0.5) & y$values
+#  inverse.rle(y)
+}
+
+#select out the values of zst1 that are 1 and should be 2
+
 #fixes that i tried but did not help the model run!
-zst1[119,21:31]<-NA#a work around, until i fix the starting value code!
-zst1[4,24:31]<-NA
-zst1[6,24:31]<-NA
-zst1[5,24:31]<-NA
-zst1[60,31]<-NA
+#zst1[119,21:31]<-NA#a work around, until i fix the starting value code!
+#zst1[4,24:31]<-NA
+#zst1[6,24:31]<-NA
+#zst1[5,24:31]<-NA
+#zst1[60,31]<-NA
 #zst1[255,10:31]<-NA#because of "cannot normalize density" error
 
 

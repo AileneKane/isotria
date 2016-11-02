@@ -1,0 +1,114 @@
+
+    
+    model {
+    # -------------------------------------------------
+    # Parameters:
+    # sV: survival probability for nonreproductive plants
+    # sF: survival probability for reproductive plants
+    # sUV: survival probability for dormant plants that were vegetative above ground
+    # sUF: survival probability for dormant plants that were reproductive above ground
+    #  dUF: dormancy probability for dormant plants that were reproductive above ground
+    # -------------------------------------------------
+    # States (S):
+    # 1 vegetative
+    # 2 reproductive
+    # 3 dormant, previously vegetative
+    # 4 dormant, previously reproductive
+    # 5 dead
+    # Observations (O):  
+    # 1 seen vegetative
+    # 2 seen reproductive
+    # 3 not seen
+    # -------------------------------------------------
+    
+    # Model, priors and constraints
+    for (i in 1:nind){
+    for (t in f[i]:(n.occasions-1)){
+    sV[i,t] <- mean.sV
+    sF[i,t] <- mean.sF
+    sUV[i,t] <- mean.sUV
+    sUF[i,t] <- mean.sUF
+    fV[i,t] <- mean.fV
+    fF[i,t] <- mean.fF
+    fUV[i,t] <- mean.fUV
+    fUF[i,t] <- mean.fUF
+    dV[i,t] <- mean.dV
+    dF[i,t] <-mean.dF
+    dUV[i,t] <- mean.dUV
+    dUF[i,t] <- mean.dUF
+    }#t
+    }#i
+    mean.sV~dunif(0,1)# Priors for mean survival for veg plants
+    mean.sF~dunif(0,1)# Priors for mean survivalsurvival for rep plants
+    mean.sUV~dunif(0,1)# Priors for mean survival for dorm(prev veg) plants
+    mean.sUF~dunif(0,1)# Priors for mean survival dorm (prev rep) plants
+    mean.fV~dunif(0,1)# Priors for mean prob of rep for veg plants
+    mean.fF~dunif(0,1)# Priors for mean  prob of rep for rep plants
+    mean.fUV~dunif(0,1)# Priors for mean prob of rep for dorm (prev veg) plants
+    mean.fUF~dunif(0,1)# Priors for mean prob of rep for dorm (prev rep) plants
+    mean.dV~dunif(0,1)# Priors for mean dormancy for veg plants
+    mean.dF~dunif(0,1)# Priors for mean dormancy for rep plants
+    mean.dUV~dunif(0,1)# Priors for mean  dormancy for dorm (prev veg) plants
+    mean.dUF~dunif(0,1)# Priors for mean  dormancy for dorm (prev rep) plants
+
+    # Define state-transition and observation matrices
+    for (i in 1:nind){  
+    # Define probabilities of state S(t+1) given S(t)
+    for (t in f[i]:(n.occasions-1)){
+    ps[1,i,t,1] <- sV[i,t] * (1-fV[i,t])*(1-dV[i,t])
+    ps[1,i,t,2] <- sV[i,t] * fV[i,t]*(1-dV[i,t])
+    ps[1,i,t,3] <- sV[i,t]*dV[i,t]
+    ps[1,i,t,4] <- 0
+    ps[1,i,t,5] <- 1-sV[i,t]
+    ps[2,i,t,1] <- sF[i,t] * (1-fF[i,t])*(1-dF[i,t])
+    ps[2,i,t,2] <- sF[i,t] * fF[i,t]*(1-dF[i,t])
+    ps[2,i,t,3] <- 0
+    ps[2,i,t,4] <- sF[i,t]*dF[i,t]
+    ps[2,i,t,5] <- 1-sF[i,t]
+    ps[3,i,t,1] <- sUV[i,t] * (1-fUV[i,t])*(1-dUV[i,t])
+    ps[3,i,t,2] <- sUV[i,t] * fUV[i,t]*(1-dUV[i,t])
+    ps[3,i,t,3] <- sUV[i,t]* dUV[i,t]
+    ps[3,i,t,4] <- 0
+    ps[3,i,t,5] <- 1-sUV[i,t]
+    ps[4,i,t,1] <- sUF[i,t] * (1-fUF[i,t])*(1-dUF[i,t])
+    ps[4,i,t,2] <- sUF[i,t] * fUF[i,t]*(1-dUF[i,t])
+    ps[4,i,t,3] <- 0
+    ps[4,i,t,4] <- sUF[i,t]* dUF[i,t]
+    ps[4,i,t,5] <- 1-sUF[i,t]
+    ps[5,i,t,1] <- 0
+    ps[5,i,t,2] <- 0
+    ps[5,i,t,3] <- 0
+    ps[5,i,t,4] <- 0
+    ps[5,i,t,5] <- 1
+    # Define probabilities of O(t) given S(t) ##first column is observed state, last is true state
+    po[1,i,t,1] <- 1
+    po[1,i,t,2] <- 0
+    po[1,i,t,3] <-0
+    po[2,i,t,1] <- 0
+    po[2,i,t,2] <- 1
+    po[2,i,t,3] <- 0
+    po[3,i,t,1] <- 0
+    po[3,i,t,2] <- 0
+    po[3,i,t,3] <- 1
+    po[4,i,t,1] <- 0
+    po[4,i,t,2] <- 0
+    po[4,i,t,3] <- 1
+    po[5,i,t,1] <- 0
+    po[5,i,t,2] <- 0
+    po[5,i,t,3] <- 1
+    } #t
+    } #i
+    
+    # Likelihood 
+    for (i in 1:nind){
+    # Define latent state at first capture
+    z[i,f[i]] <- y[i,f[i]]
+    for (t in (f[i]+1):n.occasions){
+    # State process: draw S(t) given S(t-1)
+    z[i,t] ~ dcat(ps[z[i,t-1], i, t-1,])
+    # Observation process: draw O(t) given S(t)
+    y[i,t] ~ dcat(po[z[i,t], i, t-1,])
+    } #t
+    } #i
+    }
+    
