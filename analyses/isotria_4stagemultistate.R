@@ -70,6 +70,7 @@ isoall_CH[which(isoall_CH==0)]=3#replace 0s wih 3
 isoallUF_CH=tapply(isoinds_prev2$dormstageUF,list(isoinds_prev2$UniqueID,isoinds_prev2$Year),sum)#reproductive status
 isoall_CH.ms=isoallUF_CH+isoall_CH
 isoall_CH.ms[which(isoall_CH.ms==4)]<-3#BAsed on what Nate said, this should not be explicitly coded this way because we can't see this stage
+isoall_CH.ms[which(rownames(isoall_CH.ms)=="X-02-016"),]
 n.occasions<- dim(isoall_CH.ms)[2]
 get.first <- function(x) min(which(x!=0))
 
@@ -353,49 +354,82 @@ known.state.ms <- function(ch){##removes 3s and replaces them with NAs, and repl
     state[i,n1] <- NA
   }
   state[state==3] <- NA
-  #state[state==4] <- NA
   return(state)
 }
-##I need to recode this so that the starting value is always a 2 for unobserved instances when the last seen state was 2 and a 1 for unobserved instances when the last seen state was 1
-ms.init.z <- function(ch, f){#ms.init.z gives starting values of 1 or 2 to all unknown states
-  for (i in 1:dim(ch)[1]){ch[i,1:f[i]] <- NA}
-  n1 <- min(which(ch[i,]<3))#
-  states <- max(ch, na.rm = TRUE)
-  known.states <- 1:2
-  v <- which(ch>=3)#which occurences are unknown states (=3)
-  ch[-v] <- NA#everything else besides the 3 gets an NA
-  ch[v] <- sample(known.states, length(v), replace = TRUE)##gives all unseen occurrences (3s and 4s) a starting value that is a random sampling of either 1 or 2
-  ch[i,n1] <- NA#make first observance an NA (not a 3)
-  return(ch)
+ms.init.z <- function(ch, f){#ms.init.z gives starting values of 3 or 4 to all unknown states
+zstart<-c()
+  #matrix(data=NA,nrow=dim(ch)[1], ncol=dim(ch)[2]))
+for(i in 1:dim(ch)[1]){
+  z<-ch[i,]
+  v <- which(z>=3)# occurences that are unknown states get 3s by default (already coded)
+  w<-which(z<3)
+  z[-v] <- NA#observed states get NA
+  if(length(which(ch[i,]>=3))==0){
+    z[w]<-NA
+    } else if (length(which(z==3))> 0 & length(which(ch[i,]==2))>0 & ch[i,min(which(z==3))-1]==2)
+      {
+    if(min(ch[i,which(z==3)-1], na.rm=T)>1){z[v]<-4}
+    #else if y<-which(z==4)
+    #x<-y-1
+    #q<-which(ch[i,x]==1)
+    #z[y[q-1]]<-3
+    #if(length(names(which(ch[i,y-1]==3)))>0)
+     # {
+    #  z[which(ch[i,y-1]==3)+1]<-3
+     # }
+    }
+  #print(i);print(ch[i,]);print(z)
+  
+  zstart<-rbind(zstart,z)
 }
-
-#ch[1]
-
-ch=isoall_CH.ms
-#y = isoall_CH.ms
-#y[73,24]=NA
-#still not sure how to fix the starting values- is it ok for them to be 1 or 2? or do they need to be constrained somehow? this is not clear....
-zst1=ms.init.z(ch,f)
-#a <- which(ch==1)
-#b<-zst[a+1]
-#consecna <- function(x, n=1) {
-  # function to identify elements with n or more consecutive NA values
- # y <- rle(is.na(x))
-#  y$values <- y$lengths > (n - 0.5) & y$values
-#  inverse.rle(y)
+#for (i in 1:dim(ch)[1]){ch[i,1:f[i]] <- NA}#makes sure everything before and including first value is an NA
+return(zstart)
 }
-
-#select out the values of zst1 that are 1 and should be 2
-
-#fixes that i tried but did not help the model run!
-#zst1[119,21:31]<-NA#a work around, until i fix the starting value code!
-#zst1[4,24:31]<-NA
-#zst1[6,24:31]<-NA
-#zst1[5,24:31]<-NA
-#zst1[60,31]<-NA
-#zst1[255,10:31]<-NA#because of "cannot normalize density" error
-
-
+zst1=ms.init.z(isoall_CH.ms,f)
+isoall_CH.ms[119,20]<-3
+zst1[119,20]<-4
+zst1[4,24:31]<-NA
+zst1[5,24:31]<-NA
+zst1[6,24:31]<-NA
+zst1[60,31]<-NA
+zst1[22,2]<-4
+zst1[114,2:4]<-4
+zst1[118,3]<-4
+zst1[64,4:6]<-4
+zst1[81,4]<-4
+zst1[26,5:31]<-4
+zst1[63,6]<-4
+zst1[116,6]<-4
+zst1[82,7]<-4
+zst1[82,9:11]<-4
+zst1[82,20]<-4
+zst1[82,27:31]<-4
+zst1[80,8:11]<-4
+zst1[105,8:31]<-4
+zst1[118,13]<-4
+zst1[95,18]<-4
+zst1[53,21]<-4
+zst1[9,23]<-4
+zst1[55,25]<-4
+zst1[73,25]<-4
+zst1[42,28]<-4
+zst1[185,5]<-4
+zst1[233,6]<-4
+zst1[233,28]<-4
+zst1[233,21]<-4
+zst1[129,11:31]<-4
+zst1[155,19:21]<-4
+zst1[192,21]<-4
+zst1[194,22]<-4
+zst1[199,22]<-4
+zst1[209,22]<-4
+zst1[210,22:29]<-4
+zst1[210,31]<-4
+zst1[188,23:31]<-4
+zst1[189,23]<-4
+zst1[198,24:31]<-4
+zst1[234,25:26]<-4
+zst1[237,26]<-4
 # Bundle data
 jags.data <- list(y = isoall_CH.ms, f = f, n.occasions = dim(isoall_CH.ms)[2], nind = dim(isoall_CH.ms)[1], z = known.state.ms(isoall_CH.ms), group=group, x=time_log, x1=logged_yrs2)
 
@@ -416,7 +450,7 @@ ms4.rf <- jags(jags.data, inits, parameters, "ms-ranef4stages.jags", n.chains = 
 print(ms4.rf, digits=3)
 
 ###save all samples
-mod.samples_4stage<- as.data.frame(do.call("rbind", ms3.rf$samples))
+mod.samples_4stage<- as.data.frame(do.call("rbind", ms4.rf$samples))
 write.csv(mod.samples_4stage,"msmod_samples_4stage.csv",row.names=T)
 
 ##Table of model summary, with betas

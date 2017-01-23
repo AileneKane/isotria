@@ -1,7 +1,7 @@
 #Isotria multistate model
 #Simulate data with known parameters to test the ability of my model to recover them
 #start with simple dataset with no variation between groups x and y
-#first, define mean survival, transisions, and emergence probability, 
+#first, define mean survival, transitions, and emergence probability, 
 #as well as the number of occassions, states, observations, and marked individuals
 phiA0<-0.5
 #phiA1<-0.7
