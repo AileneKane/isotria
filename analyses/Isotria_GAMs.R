@@ -8,7 +8,7 @@ rm(list=ls())
 AllClimDat = read.csv("../data/climate_isotria_NH_1976_2016.csv", header = T)#These data are form multiple stations
 ClimDat=AllClimDat[which(AllClimDat$NAME=="LAKEPORT 2, NH US"),]
 # read in isotria data
-FlwrDat = read.csv("yprobemerg.csv")
+FlwrDat = read.csv("xprobemerg.csv")
 colnames(FlwrDat)[1]<-"year"
 # both files need year in lower case as a column for matching data sets
 ClimDat$year<-substr(ClimDat$DATE,1,4)
@@ -41,7 +41,7 @@ appLags<-function(agDatC,nUnits,name,fun){
   return(agDatC)
 }
 makeDat = function(useclim, usevr, monthStart){
-  tempAggWT<-aggLags(datC=useclim, fun=mean, meas=TMAX, seg=month)#aggregating temperature by mean
+  tempAggWT<-aggLags(datC=useclim, fun=mean, meas=TMIN, seg=month)#aggregating temperature by mean
   subAgg<-tempAggWT[[1]]
   subAgg$month<-as.numeric(as.character(subAgg$month))
   subAgg<-subAgg[with(subAgg,order(year,month)),]
@@ -59,7 +59,7 @@ makeDat = function(useclim, usevr, monthStart){
         paste("t.",10:nUnits, sep=""))
   names(subsWT) <- labs
 
-  # merge climate and butterfly data, following code from Teller 2016
+  # merge climate and isotria data, following code from Teller 2016
   datag<-merge(usevr, subsWT, by="year")
   datag$year<-as.factor(datag$year);
 
