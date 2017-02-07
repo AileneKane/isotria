@@ -13,8 +13,8 @@ model {
 # dV: dormancy probability for nonreproductive plants
 # dF: dormancy probability for reproductive plants
 # dUV: dormancy probability for dormant plants that were vegetative above ground
-# -------------------------------------------------
 # dUF: dormancy probability for dormant plants that were reproductive above ground
+# -------------------------------------------------
 # States (S):
 # 1 vegetative
 # 2 reproductive
@@ -76,8 +76,8 @@ mean.sF[g]~dunif(0,1)# Priors for mean group-specific survivalsurvival for rep p
 mu.sF[g]<-log(mean.sF[g]/(1-mean.sF[g]))
 mean.sUV[g]~dunif(0,1)# Priors for mean group-specific survival for dorm(prev veg) plants
 mu.sUV[g]<-log(mean.sUV[g]/(1-mean.sUV[g]))
-mu.sUF[g]<-log(mean.sUF[g]/(1-mean.sUF[g]))
 mean.sUF[g]~dunif(0,1)# Priors for mean group-specific survival dorm (prev rep) plants
+mu.sUF[g]<-log(mean.sUF[g]/(1-mean.sUF[g]))
 mean.fV[g]~dunif(0,1)# Priors for mean group-specific prob of rep for veg plants
 mu.fV[g]<-log(mean.fV[g]/(1-mean.fV[g]))
 mean.fF[g]~dunif(0,1)# Priors for mean group-specific prob of rep for rep plants

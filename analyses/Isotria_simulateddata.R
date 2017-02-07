@@ -1,34 +1,473 @@
 #Isotria multistate model
 #Simulate data with known parameters to test the ability of my model to recover them
+rm(list=ls()) 
+options(stringsAsFactors=FALSE)
+
+library(rjags)
+library(jagsUI)
+library(lattice)
+library(coda)
+library(boot)
+library(dplyr)
 #start with simple dataset with no variation between groups x and y
-#first, define mean survival, transitions, and emergence probability, 
+#first, define mean survival, flowering probability, and emergence probability, 
 #as well as the number of occassions, states, observations, and marked individuals
-phiA0<-0.5
-#phiA1<-0.7
-phiB0<-0.7
-#phiB1<-0.9
-pA0<-0.5
-#pA1<-0.7
-pB0<-0.3
-#pB1<-0.5
-phiA0<-0.2
-#phiA1<-0.4
-n.occasions<-30
-n.states<-2
-n.obs<-15
-marked<-matrix(0,ncol=n.states,nrow=n.occasions)
-marked[,1]<-rep(200,n.occasions)
-#Now define matrices with survival, transition, and emergence probailites
-#these are 4-dimensions amtraicies with:
-#Dimension 1: state of departure
-#Dimension 2: state of arrival
-#Dimension 3: individual
-#Dimension 4:time
+sV<-0.8#survival=phi
+sF<-0.85
+sUV<-0.7
+sUF<-0.75
+fV<-0.2#flowering probability
+fF<- 0.5
+fUV<-0.2
+fUF<- 0.5
+dV<-0.3#probability of dormancy
+dF<-0.2
+dUV<-0.6
+dUF<-0.4
+n.occasions<-31
+n.states<-5
+n.obs<-3
+marked<-matrix(NA,ncol=n.states,nrow=n.occasions)
+marked[,1]<-c(50,rep(5,n.occasions-1))
+marked[,2]<-c(50,rep(5,n.occasions-1))
+marked[,3]<-rep(0,n.occasions)
+marked[,4]<-rep(0,n.occasions)
+marked[,5]<-rep(0,n.occasions)
+
+#State process matrix.This has 4 -dimensions: 
+#d1: state of departure
+#d2: state or arrival
+#d3: individual
+#d4: time
 totrel<-sum(marked)*(n.occasions-1)
-PSI.STATE<-array(NA,dim=c(n.states,n.states,totrel,n.occasions-1))
+STATE<-array(NA,dim=c(n.states,n.states,totrel,n.occasions-1))
 for(i in 1:totrel){
-  PSI.STATE[,,i,t]<-matric(c(
-    s*
-  ))
+  for(t in 1:(n.occasions-1)){
+    STATE[,,i,t]<-matrix(c(
+    sV*(1-fV)*(1-dV),sV*fV*(1-dV),sV*dV,0,1-sV,
+    sF*(1-fF)*(1-dF),sF*fF*(1-dF),0,sF*dF,1-sF,
+    sUV*(1-fUV)*(1-dUV),sUV*fUV*(1-dUV),sUV*dUV,0,1-sUV,
+   sUF*(1-fUF)*(1-dUF),sUF*fUF*(1-dUF),0,sUF*dUF,1-sUF,
+    0,0,0,0,1),nrow=n.states, byrow=TRUE)
+  }#t
+}#i
+#Observation process matrix
+# Define probabilities of O(t) given S(t) ##first column is observed state, last is true state
+OBS<-array(NA,dim=c(n.states,n.obs,totrel,n.occasions-1))#replaced NA with 0 becuase got error "
+for (i in 1:totrel){
+  for (t in 1:(n.occasions-1)){
+    OBS[,,i,t]<-matrix(c(
+      1,0,0,
+      0,1,0,
+      0,0,1,
+      0,0,1,
+      0,0,1), nrow=n.states,byrow = TRUE)
+  }#t
+}#i
+#function to simulate multistate capture-recapture data
+simul.ms<-function(STATE,OBS,marked,unobservable=NA){
+  #unobservable: number of states that are unobservable. in this
+  n.occasions<-dim(STATE)[4]+1
+  CH<-CH.TRUE<-matrix(NA,ncol=n.occasions,nrow=sum(marked))
+  #define a vector with the occasion of marking
+  mark.occ<-matrix(0,ncol=n.occasions, nrow=sum(marked))
+  g<-colSums(marked)
+  for (s in 1:dim(STATE)[1]){
+    if (g[s]==0) {next}#to avoid error message if nothing to replace
+    mark.occ[(cumsum(g[1:s])-g[s]+1) [s] :cumsum(g[1:s])[s],s] <-rep(1:n.occasions, marked[1:n.occasions,s])
+  }#s
+  for(i in 1:sum(marked)){
+    for(s in 1:dim(STATE)[1]){
+      if (mark.occ[i,s]==0) {next}
+      first<-mark.occ[i,s]
+      CH[i,first]<-s
+      CH.TRUE[i,first]<-s
+    }#s
+    for(t in (first+1):n.occasions){
+      #multinomial trials for state transitions
+      if (first==n.occasions) {next}
+      state<-which(rmultinom(1,1,STATE[CH.TRUE[i,t-1],,i,t-1])==1)
+      CH.TRUE[i,t]<-state
+      #multinomial trials for observation process
+      event<-which(rmultinom(1,1,OBS[CH.TRUE[i,t],,i,t-1])==1)
+      CH[i,t]<-event
+    }#t
+  }#i
+  #replace the NA and the highest state number (dead) in the file by 0
+  #CH[is.na(CH)]<-0
+  CH[CH==dim(STATE)[1]]<-0
+  CH[CH==unobservable]<-0
+  id<-numeric(0)
+  for(i in 1:dim(CH)[1]){
+    z<-min(which(CH[i,]!=0))
+    ifelse(z==dim(CH)[2], id<-c(id,i), id<-c(id))
+  }
+  return(list(CH=CH[-id,],CH.TRUE=CH.TRUE[-id,]))
+  #CH: captire-histories to be used
+  #CH.TRUE: capture histories with perfect observation
 }
+sim<-simul.ms(STATE,OBS,marked)
+CH<-sim$CH
+#Replace first observations that are 0 with NAs
+CH[which(CH[,1]==0),1]<-NA
+#compute vector with occasion of first capture
+get.first<-function(x) min(which(x!=0))
+CH2<-rbind(CH,CH)
+f<-apply(CH2,1,get.first)
+#recode CH matrix since 0 is not allowed in WinBUGS
+rCH<-CH2
+rCH[rCH==0]<-3
+rCH[rCH==4]<-3
+###now use my 4-stage model to estimate parameters of these data
+group<-c(rep(1,390),rep(2,390))#group x=control=1, group y=logged=2#assign half plants to gorup 1 and half to group 2
+logged_x<-c(rep(0,30))#logging never occurred for group x- this is one less than the number of years 
+logged_y<-c(rep(0,12),rep(1,18))#for group y, logging occurred between 1997 and 1998, so first 13 years= no logging treatment
+logged_yrs<-c(rep(0,13),seq(1:17))#add decay time- years since logging this is Beta1, this is x1, add a year after the initial year of logging to allow for a bump up
+logged_yrs2<-rbind(logged_yrs,logged_yrs)
+time_log<-rbind(logged_y,logged_y)#to test differene between groups before and after logging
+
+#Fit a multistate model in JAGS, with random effects of year####
+#The random effect allows time-variance for all vital rates (i.e. random effect of time), plus fixed effect of group (X vs Y)
+sink("ms-ranef4stages.jags")
+cat("
+    
+    model {
+    # -------------------------------------------------
+    # Parameters:
+    # sV: survival probability for nonreproductive plants
+    # sF: survival probability for reproductive plants
+    # sUV: survival probability for dormant plants that were vegetative above ground
+    # sUF: survival probability for dormant plants that were reproductive above ground
+    # fV: reproduction probability for vegetative plants
+    # fF: reproduction probability for reproductive plants
+    # fUV: reproduction probability for dormant plants that were vegetative above ground
+    # fUF: reproduction probability for dormant plants that were reproductive above ground
+    # dV: dormancy probability for nonreproductive plants
+    # dF: dormancy probability for reproductive plants
+    # dUV: dormancy probability for dormant plants that were vegetative above ground
+    # dUF: dormancy probability for dormant plants that were reproductive above ground
+    # -------------------------------------------------
+    # States (S):
+    # 1 vegetative
+    # 2 reproductive
+    # 3 dormant, previously vegetative
+    # 4 dormant, previously reproductive
+    # 5 dead
+    # Observations (O):  
+    # 1 seen vegetative
+    # 2 seen reproductive
+    # 3 not seen
+    # -------------------------------------------------
+    
+    # Model, priors and constraints
+    for (i in 1:nind){
+    for (t in f[i]:(n.occasions-1)){
+    logit(sV[i,t]) <- eta.sV[group[i],t]
+    logit(sF[i,t]) <- eta.sF[group[i],t]
+    logit(sUV[i,t]) <- eta.sUV[group[i],t]
+    logit(sUF[i,t]) <- eta.sUF[group[i],t]
+    logit(fV[i,t]) <- eta.fV[group[i],t]
+    logit(fF[i,t]) <- eta.fF[group[i],t]
+    logit(fUV[i,t]) <- eta.fUV[group[i],t]
+    logit(fUF[i,t]) <- eta.fUF[group[i],t]
+    logit(dV[i,t]) <- eta.dV[group[i],t]
+    logit(dF[i,t]) <- eta.dF[group[i],t]
+    logit(dUV[i,t]) <- eta.dUV[group[i],t]
+    logit(dUF[i,t]) <- eta.dUF[group[i],t]
+    }#t
+    }#i
+    for (g in 1:2){#group  
+    for (t in 1:(n.occasions-1)){
+    eta.sV[g,t]  <-mu.sV[g]+beta.sV[g]*x[g,t]+beta1.sV[g]*x1[g,t]+epsilon.sV[g,t]
+    eta.sF[g,t]  <-mu.sF[g]+beta.sF[g]*x[g,t]+beta1.sF[g]*x1[g,t]+epsilon.sF[g,t]
+    eta.sUV[g,t]  <-mu.sUV[g]+beta.sUV[g]*x[g,t]+beta1.sUV[g]*x1[g,t]+epsilon.sUV[g,t]
+    eta.sUF[g,t]  <-mu.sUF[g]+beta.sUF[g]*x[g,t]+beta1.sUF[g]*x1[g,t]+epsilon.sUF[g,t]
+    eta.fV[g,t]  <-mu.fV[g]+beta.fV[g]*x[g,t]+beta1.fV[g]*x1[g,t]+epsilon.fV[g,t]
+    eta.fF[g,t]  <-mu.fF[g]+beta.fF[g]*x[g,t]+beta1.fF[g]*x1[g,t]+epsilon.fF[g,t]
+    eta.fUV[g,t]  <-mu.fUV[g]+beta.fUV[g]*x[g,t]+beta1.fUV[g]*x1[g,t]+epsilon.fUV[g,t]
+    eta.fUF[g,t]  <-mu.fUF[g]+beta.fUF[g]*x[g,t]+beta1.fUF[g]*x1[g,t]+epsilon.fUF[g,t]
+    eta.dV[g,t]  <-mu.dV[g]+beta.dV[g]*x[g,t]+beta1.dV[g]*x1[g,t]+epsilon.dV[g,t]
+    eta.dF[g,t]  <-mu.dF[g]+beta.dF[g]*x[g,t]+beta1.dF[g]*x1[g,t]+epsilon.dF[g,t]
+    eta.dUV[g,t]  <-mu.dUV[g]+beta.dUV[g]*x[g,t]+beta1.dUV[g]*x1[g,t]+epsilon.dUV[g,t]
+    eta.dUF[g,t]  <-mu.dUF[g]+beta.dUF[g]*x[g,t]+beta1.dUF[g]*x1[g,t]+epsilon.dUF[g,t]
+    epsilon.sV[g,t]~dnorm(0,tau.sV[g])#could move all the mean stuff to this part, might help model mix better? hierarchical centering
+    epsilon.sF[g,t]~dnorm(0,tau.sF[g])
+    epsilon.sUV[g,t]~dnorm(0,tau.sUV[g])
+    epsilon.sUF[g,t]~dnorm(0,tau.sUF[g])
+    epsilon.fV[g,t]~dnorm(0,tau.fV[g])
+    epsilon.fF[g,t]~dnorm(0,tau.fF[g])
+    epsilon.fUV[g,t]~dnorm(0,tau.fUV[g])
+    epsilon.fUF[g,t]~dnorm(0,tau.fUF[g])
+    epsilon.dV[g,t]~dnorm(0,tau.dV[g])
+    epsilon.dF[g,t]~dnorm(0,tau.dF[g])
+    epsilon.dUV[g,t]~dnorm(0,tau.dUV[g])
+    epsilon.dUF[g,t]~dnorm(0,tau.dUF[g])
+    }#t
+    mean.sV[g]~dunif(0,1)# Priors for mean group-specific survival for veg plants
+    mu.sV[g]<-log(mean.sV[g]/(1-mean.sV[g]))  
+    mean.sF[g]~dunif(0,1)# Priors for mean group-specific survivalsurvival for rep plants
+    mu.sF[g]<-log(mean.sF[g]/(1-mean.sF[g]))    
+    mean.sUV[g]~dunif(0,1)# Priors for mean group-specific survival for dorm(prev veg) plants
+    mu.sUV[g]<-log(mean.sUV[g]/(1-mean.sUV[g])) 
+    mean.sUF[g]~dunif(0,1)# Priors for mean group-specific survival dorm (prev rep) plants
+    mu.sUF[g]<-log(mean.sUF[g]/(1-mean.sUF[g])) 
+    mean.fV[g]~dunif(0,1)# Priors for mean group-specific prob of rep for veg plants
+    mu.fV[g]<-log(mean.fV[g]/(1-mean.fV[g]))       
+    mean.fF[g]~dunif(0,1)# Priors for mean group-specific prob of rep for rep plants
+    mu.fF[g]<-log(mean.fF[g]/(1-mean.fF[g]))    
+    mean.fUV[g]~dunif(0,1)# Priors for mean group-specific prob of rep for dorm (prev veg) plants
+    mu.fUV[g]<-log(mean.fUV[g]/(1-mean.fUV[g])) 
+    mean.fUF[g]~dunif(0,1)# Priors for mean group-specific prob of rep for dorm (prev rep) plants
+    mu.fUF[g]<-log(mean.fUF[g]/(1-mean.fUF[g])) 
+    mean.dV[g]~dunif(0,1)# Priors for mean group-specific dormancy for veg plants
+    mu.dV[g]<-log(mean.dV[g]/(1-mean.dV[g]))       
+    mean.dF[g]~dunif(0,1)# Priors for mean group-specific dormancy for rep plants
+    mu.dF[g]<-log(mean.dF[g]/(1-mean.dF[g]))    
+    mean.dUV[g]~dunif(0,1)# Priors for mean group-specific dormancy for dorm (prev veg) plants
+    mu.dUV[g]<-log(mean.dUV[g]/(1-mean.dUV[g]))
+    mean.dUF[g]~dunif(0,1)# Priors for mean group-specific dormancy for dorm (prev rep) plants
+    mu.dUF[g]<-log(mean.dUF[g]/(1-mean.dUV[g])) 
+    sigma.sV[g]~dunif(0,10)#temporal variance for veg plants survival
+    tau.sV[g]<-pow(sigma.sV[g],-2)
+    sigma.sV2[g]<-pow(sigma.sV[g],2)
+    sigma.sF[g]~dunif(0,10)#temporal variance for rep plants survival
+    tau.sF[g]<-pow(sigma.sF[g],-2)
+    sigma.sF2[g]<-pow(sigma.sF[g],2)
+    sigma.sUV[g]~dunif(0,10)#temporal variance for dorm plants survival
+    tau.sUV[g]<-pow(sigma.sUV[g],-2)
+    sigma.sUV2[g]<-pow(sigma.sUV[g],2)
+    sigma.sUF[g]~dunif(0,10)#temporal variance for dorm plants survival
+    tau.sUF[g]<-pow(sigma.sUF[g],-2)
+    sigma.sUF2[g]<-pow(sigma.sUF[g],2)
+    sigma.fV[g]~dunif(0,10)#temporal variance for prob of rep
+    tau.fV[g]<-pow(sigma.fV[g],-2)
+    sigma.fV2[g]<-pow(sigma.fV[g],2)
+    sigma.fF[g]~dunif(0,10)#
+    tau.fF[g]<-pow(sigma.fF[g],-2)
+    sigma.fF2[g]<-pow(sigma.fF[g],2)
+    sigma.fUV[g]~dunif(0,10)
+    tau.fUV[g]<-pow(sigma.fUV[g],-2)
+    sigma.fUV2[g]<-pow(sigma.fUV[g],2)
+    sigma.fUF[g]~dunif(0,10)
+    tau.fUF[g]<-pow(sigma.fUF[g],-2)
+    sigma.fUF2[g]<-pow(sigma.fUF[g],2)
+    sigma.dV[g]~dunif(0,10)#temporal variance of dormancy for veg plants 
+    tau.dV[g]<-pow(sigma.dV[g],-2)
+    sigma.dV2[g]<-pow(sigma.dV[g],2)
+    sigma.dF[g]~dunif(0,10)#temporal variance of dormancy for rep plants
+    tau.dF[g]<-pow(sigma.dF[g],-2)
+    sigma.dF2[g]<-pow(sigma.dF[g],2)
+    sigma.dUV[g]~dunif(0,10)#temporal variance of dormancy for dormant plants
+    tau.dUV[g]<-pow(sigma.dUV[g],-2)
+    sigma.dUV2[g]<-pow(sigma.dUV[g],2)
+    sigma.dUF[g]~dunif(0,10)#temporal variance of dormancy for dormant plants
+    tau.dUF[g]<-pow(sigma.dUF[g],-2)
+    sigma.dUF2[g]<-pow(sigma.dUF[g],2)
+    beta.sV[g]~dnorm(0,0.001)I(-10,10)
+    beta.sF[g]~dnorm(0,0.001)I(-10,10)
+    beta.sUV[g]~dnorm(0,0.001)I(-10,10)
+    beta.sUF[g]~dnorm(0,0.001)I(-10,10)
+    beta.fV[g]~dnorm(0,0.001)I(-10,10)
+    beta.fF[g]~dnorm(0,0.001)I(-10,10)
+    beta.fUV[g]~dnorm(0,0.001)I(-10,10)
+    beta.fUF[g]~dnorm(0,0.001)I(-10,10)
+    beta.dV[g]~dnorm(0,0.001)I(-10,10)
+    beta.dF[g]~dnorm(0,0.001)I(-10,10)
+    beta.dUV[g]~dnorm(0,0.001)I(-10,10)
+    beta.dUF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sUV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sUF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fUV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fUF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.dV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.dF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.dUV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.dUF[g]~dnorm(0,0.001)I(-10,10)
+    #calculate probabilities of 2 different groups and 2 different time periods (=4 group-time periods) to look at later... 
+    #survival
+    logit(sV0[g])<- mu.sV[g]
+    logit(sV1[g])<- mu.sV[g] + beta.sV[g]
+    logit(sF0[g])<- mu.sF[g]
+    logit(sF1[g])<- mu.sF[g] + beta.sF[g]
+    logit(sUV0[g])<- mu.sUV[g]
+    logit(sUV1[g])<- mu.sUV[g] + beta.sUV[g]
+    logit(sUF0[g])<- mu.sUF[g]
+    logit(sUF1[g])<- mu.sUF[g] + beta.sUF[g]
+    #reproduction
+    logit(fV0[g])<- mu.fV[g]
+    logit(fV1[g])<- mu.fV[g] + beta.fV[g]
+    logit(fF0[g])<- mu.fF[g]
+    logit(fF1[g])<- mu.fF[g] + beta.fF[g]
+    logit(fUV0[g])<- mu.fUV[g]
+    logit(fUV1[g])<- mu.fUV[g] + beta.fUV[g]
+    logit(fUF0[g])<- mu.fUF[g]
+    logit(fUF1[g])<- mu.fUF[g] + beta.fUF[g]
+    #dormancy
+    logit(dV0[g])<- mu.dV[g]
+    logit(dV1[g])<- mu.dV[g] + beta.dV[g]
+    logit(dF0[g])<- mu.dF[g]
+    logit(dF1[g])<- mu.dF[g] + beta.dF[g]
+    logit(dUV0[g])<- mu.dUV[g]
+    logit(dUV1[g])<- mu.dUV[g] + beta.dUV[g]
+    logit(dUF0[g])<- mu.dUF[g]
+    logit(dUF1[g])<- mu.dUF[g] + beta.dUF[g]
+    }#g
+    
+    # Define state-transition and observation matrices
+    for (i in 1:nind){  
+    # Define probabilities of state S(t+1) given S(t)
+    for (t in f[i]:(n.occasions-1)){
+    ps[1,i,t,1] <- sV[i,t] * (1-fV[i,t])*(1-dV[i,t])
+    ps[1,i,t,2] <- sV[i,t] * fV[i,t]*(1-dV[i,t])
+    ps[1,i,t,3] <- sV[i,t]*dV[i,t]
+    ps[1,i,t,4] <- 0
+    ps[1,i,t,5] <- 1-sV[i,t]
+    ps[2,i,t,1] <- sF[i,t] * (1-fF[i,t])*(1-dF[i,t])
+    ps[2,i,t,2] <- sF[i,t] * fF[i,t]*(1-dF[i,t])
+    ps[2,i,t,3] <- 0
+    ps[2,i,t,4] <- sF[i,t]*dF[i,t]
+    ps[2,i,t,5] <- 1-sF[i,t]
+    ps[3,i,t,1] <- sUV[i,t] * (1-fUV[i,t])*(1-dUV[i,t])
+    ps[3,i,t,2] <- sUV[i,t] * fUV[i,t]*(1-dUV[i,t])
+    ps[3,i,t,3] <- sUV[i,t]* dUV[i,t]
+    ps[3,i,t,4] <- 0
+    ps[3,i,t,5] <- 1-sUV[i,t]
+    ps[4,i,t,1] <- sUF[i,t] * (1-fUF[i,t])*(1-dUF[i,t])
+    ps[4,i,t,2] <- sUF[i,t] * fUF[i,t]*(1-dUF[i,t])
+    ps[4,i,t,3] <- 0
+    ps[4,i,t,4] <- sUF[i,t]* dUF[i,t]
+    ps[4,i,t,5] <- 1-sUF[i,t]
+    ps[5,i,t,1] <- 0
+    ps[5,i,t,2] <- 0
+    ps[5,i,t,3] <- 0
+    ps[5,i,t,4] <- 0
+    ps[5,i,t,5] <- 1
+    # Define probabilities of O(t) given S(t) ##first column is observed state, last is true state
+    po[1,i,t,1] <- 1
+    po[1,i,t,2] <- 0
+    po[1,i,t,3] <-0
+    po[2,i,t,1] <- 0
+    po[2,i,t,2] <- 1
+    po[2,i,t,3] <- 0
+    po[3,i,t,1] <- 0
+    po[3,i,t,2] <- 0
+    po[3,i,t,3] <- 1
+    po[4,i,t,1] <- 0
+    po[4,i,t,2] <- 0
+    po[4,i,t,3] <- 1
+    po[5,i,t,1] <- 0
+    po[5,i,t,2] <- 0
+    po[5,i,t,3] <- 1
+    
+    } #t
+    } #i
+    
+    # Likelihood 
+    for (i in 1:nind){
+    # Define latent state at first capture
+    z[i,f[i]] <- y[i,f[i]]
+    for (t in (f[i]+1):n.occasions){
+    # State process: draw S(t) given S(t-1)
+    z[i,t] ~ dcat(ps[z[i,t-1], i, t-1,])
+    # Observation process: draw O(t) given S(t)
+    y[i,t] ~ dcat(po[z[i,t], i, t-1,])
+    } #t
+    } #i
+    }
+    ",fill = TRUE)
+sink()
+
+#Function to create known latent state z
+########
+known.state.ms <- function(ch){##removes 3s and replaces them with NAs, and replaces first observation with NA
+  state <- ch
+  for (i in 1:dim(ch)[1]){
+    n1 <- min(which(ch[i,]<3))#
+    state[i,n1] <- NA
+  }
+  state[state==3] <- NA
+  return(state)
+}
+
+#give starting values of 3 or 4 to all unknown states
+ms.init.z <- function(ch, f){#ms.init.z gives starting values of 3 or 4 to all unknown states
+  zstart<-c()
+  #matrix(data=NA,nrow=dim(ch)[1], ncol=dim(ch)[2]))
+  for(i in 1:dim(ch)[1]){
+    z<-ch[i,]
+    v <- which(z>=3)# occurences that are unknown states get 3s by default (already coded)
+    w<-which(z<3)
+    z[-v] <- NA#observed states get NA
+    if(length(which(ch[i,]>=3))==0){
+      z[w]<-NA
+    } else if (length(which(z==3))> 0 & length(which(ch[i,]==2))>0 & '2' %in% ch[i,which(z==3)-1])
+    {
+      if(ch[min(which(z==3),na.rm=T)-1]==2){z[min(which(z==3),na.rm=T)]<-4}
+      if(!is.na(z[min(which(z==4), na.rm=T)+1]) & z[min(which(z==4), na.rm=T)+1]==3){z[min(which(z==4), na.rm=T)+1]<-4}
+      if(!is.na(z[min(which(z==4), na.rm=T)+2]) & z[min(which(z==4), na.rm=T)+2]==3){z[min(which(z==4), na.rm=T)+2]<-4}
+      if(!is.na(z[min(which(z==4), na.rm=T)+2]) & length(z[which(ch[i,]==2)+1])>1){z[which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+1]==3)]<-4}
+      if(!is.na(z[min(which(z==4), na.rm=T)+2]) & length(z[which(ch[i,]==2)+2])>1){z[which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+2]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+1]==3)])>=1){z[which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+1]==3)]<-4}
+      
+      if(length(z[which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+2]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+2]==3)]){z[which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+2]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+3][which(z[which(ch[i,]==2)+3]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+3]==3)]){z[which(ch[i,]==2)+3][which(z[which(ch[i,]==2)+3]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+4][which(z[which(ch[i,]==2)+4]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+3][which(z[which(ch[i,]==2)+4]==3)]){z[which(ch[i,]==2)+4][which(z[which(ch[i,]==2)+4]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+5][which(z[which(ch[i,]==2)+5]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+4][which(z[which(ch[i,]==2)+5]==3)]){z[which(ch[i,]==2)+5][which(z[which(ch[i,]==2)+5]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+6][which(z[which(ch[i,]==2)+6]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+5][which(z[which(ch[i,]==2)+6]==3)]){z[which(ch[i,]==2)+6][which(z[which(ch[i,]==2)+6]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+7][which(z[which(ch[i,]==2)+7]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+6][which(z[which(ch[i,]==2)+7]==3)]){z[which(ch[i,]==2)+7][which(z[which(ch[i,]==2)+7]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+8][which(z[which(ch[i,]==2)+8]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+7][which(z[which(ch[i,]==2)+8]==3)]){z[which(ch[i,]==2)+8][which(z[which(ch[i,]==2)+8]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+9][which(z[which(ch[i,]==2)+9]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+8][which(z[which(ch[i,]==2)+9]==3)]){z[which(ch[i,]==2)+9][which(z[which(ch[i,]==2)+9]==3)]<-4}
+      if(length(z[which(ch[i,]==2)+10][which(z[which(ch[i,]==2)+10]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+9][which(z[which(ch[i,]==2)+10]==3)]){z[which(ch[i,]==2)+10][which(z[which(ch[i,]==2)+10]==3)]<-4}
+      if(!'1' %in% ch[i,which(ch[i,]==2)+10][which(z[which(ch[i,]==2)+11]==3)] & length(z[which(ch[i,]==2)+11][which(z[which(ch[i,]==2)+11]==3)])>=1){z[which(ch[i,]==2)+11][which(z[which(ch[i,]==2)+11]==3)]<-4}
+      if(!'1' %in% ch[i,which(ch[i,]==2)+11][which(z[which(ch[i,]==2)+12]==3)] & length(z[which(ch[i,]==2)+12][which(z[which(ch[i,]==2)+12]==3)])>=1){z[which(ch[i,]==2)+12][which(z[which(ch[i,]==2)+12]==3)]<-4}
+      if(!'1' %in% ch[i,which(ch[i,]==2)+12][which(z[which(ch[i,]==2)+13]==3)] & length(z[which(ch[i,]==2)+13][which(z[which(ch[i,]==2)+13]==3)])>=1){z[which(ch[i,]==2)+13][which(z[which(ch[i,]==2)+13]==3)]<-4}
+      if(!'1' %in% ch[i,which(ch[i,]==2)+13][which(z[which(ch[i,]==2)+14]==3)] & length(z[which(ch[i,]==2)+14][which(z[which(ch[i,]==2)+14]==3)])>=1){z[which(ch[i,]==2)+14][which(z[which(ch[i,]==2)+14]==3)]<-4}
+      if(!'1' %in% ch[i,which(ch[i,]==2)+14][which(z[which(ch[i,]==2)+15]==3)] & length(z[which(ch[i,]==2)+15][which(z[which(ch[i,]==2)+15]==3)])>=1){z[which(ch[i,]==2)+15][which(z[which(ch[i,]==2)+15]==3)]<-4}
+      if(!'1' %in% ch[i,which(ch[i,]==2)+15][which(z[which(ch[i,]==2)+16]==3)] & length(z[which(ch[i,]==2)+16][which(z[which(ch[i,]==2)+16]==3)])>=1){z[which(ch[i,]==2)+16][which(z[which(ch[i,]==2)+16]==3)]<-4}
+      #if(!'1' %in% ch[i,which(ch[i,]==2)+16][which(z[which(ch[i,]==2)+17]==3)] & length(z[which(ch[i,]==2)+17][which(z[which(ch[i,]==2)+17]==3)])>=1){z[which(ch[i,]==2)+17][which(z[which(ch[i,]==2)+17]==3)]<-4}
+      
+      if(min(ch[i,which(z==3)-1], na.rm=T)>1){z[v]<-4}
+      #else if y<-which(z==4)
+      #x<-y-1
+      #q<-which(ch[i,x]==1)
+      #z[y[q-1]]<-3
+      #if(length(names(which(ch[i,y-1]==3)))>0)
+      # {
+      #  z[which(ch[i,y-1]==3)+1]<-3
+      # }
+    }
+    #print(i);print(ch[i,]);print(z)
+    
+    zstart<-rbind(zstart,z)
+  }
+  #for (i in 1:dim(ch)[1]){ch[i,1:f[i]] <- NA}#makes sure everything before and including first value is an NA
+  return(zstart)
+}
+
+zst=ms.init.z(rCH,f)
+
+# Bundle data
+jags.data <- list(y = rCH, f = f, n.occasions = dim(rCH)[2], nind = dim(rCH)[1], z = known.state.ms(rCH),group=group, x=time_log, x1=logged_yrs2)
+
+# Initial values
+inits<-function(){list(mean.sV=c(.5,.5), mean.sF=c(.5,.5),mean.sUV=c(.5,.5),mean.sUF=c(.5,.5),mean.fV=c(.5,.5),mean.fF=c(.5,.5),mean.fUV=c(.5,.5),mean.fUF=c(.5,.5),mean.dV=c(.5,.5),mean.dF=c(.5,.5),mean.dUV=c(.5,.5),mean.dUF=c(.5,.5),sigma.sV=c(1,1),sigma.sF=c(1,1),sigma.sUV=c(1,1),sigma.sUF=c(1,1),sigma.fV=c(1,1),sigma.fF=c(1,1),sigma.fUV=c(1,1),sigma.fUF=c(1,1),sigma.dV=c(1,1),sigma.dF=c(1,1),sigma.dUV=c(1,1),sigma.dUF=c(1,1),z = zst)}
+# Parameters monitored
+parameters <- c("mean.sV","mean.sF","mean.sUV","mean.sUF", "mean.fV","mean.fF","mean.fUV","mean.fUF","mean.dV","mean.dF","mean.dUV","mean.dUF","beta.sV","beta.sF", "beta.sUV","beta.sUF","beta.fV","beta.fF","beta.fUV","beta.fUF","beta.dV", "beta.dF", "beta.dUV","beta.dUF","sV0","sV1","sF0","sF1","sUV0","sUF0","sUV1","sUF1","fV0","fV1","fF0","fF1","fUV0","fUV1","fUF0","fUF1","dV0","dV1","dF0","dF1","dUV0","dUF0","dUV1","dUF1","beta1.sV","beta1.sF","beta1.sUV","beta1.sUF","beta1.fV","beta1.fF","beta1.fUV","beta1.fUF","beta1.dV", "beta1.dF","beta1.dUV","beta1.dUF","mu.sV","mu.sF","mu.sUV","mu.sUF","mu.fV","mu.fF","mu.fUV","mu.fUF","mu.dV","mu.dF","mu.dUV","mu.dUF","sigma.sV2","sigma.sF2","sigma.sUV2","sigma.sUF2","sigma.fV2","sigma.fF2","sigma.fUV2","sigma.fUF2","sigma.dV2","sigma.dF2","sigma.dUV2","sigma.dUF2")
+
+# MCMC settings
+ni <- 2500
+nt <- 5
+nb <- 500
+nc <- 3
+
+# Call JAGS from R #
+#complex model
+ms4.rf <- jags(jags.data, inits, parameters, "ms-ranef4stages.jags", n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb, parallel=T)
+print(ms4.rf, digits=3)
+#simulate 100 datasets, then fit the model to each dataset let run for 5000 iterations for each.
+#Andy writes a function that saves output. 
 
