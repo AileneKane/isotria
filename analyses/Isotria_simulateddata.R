@@ -401,51 +401,31 @@ ms.init.z <- function(ch, f){#ms.init.z gives starting values of 3 or 4 to all u
     z<-ch[i,]
     v <- which(z>=3)# occurences that are unknown states get 3s by default (already coded)
     w<-which(z<3)
+    x<-which(z==2)
     z[-v] <- NA#observed states get NA
-    if(length(which(ch[i,]>=3))==0){
+    if(length(x)==0){z<-z}
+    else if(length(which(z==3))> 0 & length(x)>0 & !('2' %in% ch[i,which(z==3)-1])){z=z}
+    else if(length(which(ch[i,]>=3))==0){
       z[w]<-NA
-    } else if (length(which(z==3))> 0 & length(which(ch[i,]==2))>0 & '2' %in% ch[i,which(z==3)-1])
+    } else if (length(which(z==3))> 0 & length(x)>0 & '2' %in% ch[i,which(z==3)-1])
     {
-      if(ch[min(which(z==3),na.rm=T)-1]==2){z[min(which(z==3),na.rm=T)]<-4}
-      if(!is.na(z[min(which(z==4), na.rm=T)+1]) & z[min(which(z==4), na.rm=T)+1]==3){z[min(which(z==4), na.rm=T)+1]<-4}
-      if(!is.na(z[min(which(z==4), na.rm=T)+2]) & z[min(which(z==4), na.rm=T)+2]==3){z[min(which(z==4), na.rm=T)+2]<-4}
-      if(!is.na(z[min(which(z==4), na.rm=T)+2]) & length(z[which(ch[i,]==2)+1])>1){z[which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+1]==3)]<-4}
-      if(!is.na(z[min(which(z==4), na.rm=T)+2]) & length(z[which(ch[i,]==2)+2])>1){z[which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+2]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+1]==3)])>=1){z[which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+1]==3)]<-4}
-      
-      if(length(z[which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+2]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+1][which(z[which(ch[i,]==2)+2]==3)]){z[which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+2]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+3][which(z[which(ch[i,]==2)+3]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+2][which(z[which(ch[i,]==2)+3]==3)]){z[which(ch[i,]==2)+3][which(z[which(ch[i,]==2)+3]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+4][which(z[which(ch[i,]==2)+4]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+3][which(z[which(ch[i,]==2)+4]==3)]){z[which(ch[i,]==2)+4][which(z[which(ch[i,]==2)+4]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+5][which(z[which(ch[i,]==2)+5]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+4][which(z[which(ch[i,]==2)+5]==3)]){z[which(ch[i,]==2)+5][which(z[which(ch[i,]==2)+5]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+6][which(z[which(ch[i,]==2)+6]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+5][which(z[which(ch[i,]==2)+6]==3)]){z[which(ch[i,]==2)+6][which(z[which(ch[i,]==2)+6]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+7][which(z[which(ch[i,]==2)+7]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+6][which(z[which(ch[i,]==2)+7]==3)]){z[which(ch[i,]==2)+7][which(z[which(ch[i,]==2)+7]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+8][which(z[which(ch[i,]==2)+8]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+7][which(z[which(ch[i,]==2)+8]==3)]){z[which(ch[i,]==2)+8][which(z[which(ch[i,]==2)+8]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+9][which(z[which(ch[i,]==2)+9]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+8][which(z[which(ch[i,]==2)+9]==3)]){z[which(ch[i,]==2)+9][which(z[which(ch[i,]==2)+9]==3)]<-4}
-      if(length(z[which(ch[i,]==2)+10][which(z[which(ch[i,]==2)+10]==3)])>=1 & !'1' %in% ch[i,which(ch[i,]==2)+9][which(z[which(ch[i,]==2)+10]==3)]){z[which(ch[i,]==2)+10][which(z[which(ch[i,]==2)+10]==3)]<-4}
-      if(!'1' %in% ch[i,which(ch[i,]==2)+10][which(z[which(ch[i,]==2)+11]==3)] & length(z[which(ch[i,]==2)+11][which(z[which(ch[i,]==2)+11]==3)])>=1){z[which(ch[i,]==2)+11][which(z[which(ch[i,]==2)+11]==3)]<-4}
-      if(!'1' %in% ch[i,which(ch[i,]==2)+11][which(z[which(ch[i,]==2)+12]==3)] & length(z[which(ch[i,]==2)+12][which(z[which(ch[i,]==2)+12]==3)])>=1){z[which(ch[i,]==2)+12][which(z[which(ch[i,]==2)+12]==3)]<-4}
-      if(!'1' %in% ch[i,which(ch[i,]==2)+12][which(z[which(ch[i,]==2)+13]==3)] & length(z[which(ch[i,]==2)+13][which(z[which(ch[i,]==2)+13]==3)])>=1){z[which(ch[i,]==2)+13][which(z[which(ch[i,]==2)+13]==3)]<-4}
-      if(!'1' %in% ch[i,which(ch[i,]==2)+13][which(z[which(ch[i,]==2)+14]==3)] & length(z[which(ch[i,]==2)+14][which(z[which(ch[i,]==2)+14]==3)])>=1){z[which(ch[i,]==2)+14][which(z[which(ch[i,]==2)+14]==3)]<-4}
-      if(!'1' %in% ch[i,which(ch[i,]==2)+14][which(z[which(ch[i,]==2)+15]==3)] & length(z[which(ch[i,]==2)+15][which(z[which(ch[i,]==2)+15]==3)])>=1){z[which(ch[i,]==2)+15][which(z[which(ch[i,]==2)+15]==3)]<-4}
-      if(!'1' %in% ch[i,which(ch[i,]==2)+15][which(z[which(ch[i,]==2)+16]==3)] & length(z[which(ch[i,]==2)+16][which(z[which(ch[i,]==2)+16]==3)])>=1){z[which(ch[i,]==2)+16][which(z[which(ch[i,]==2)+16]==3)]<-4}
-      #if(!'1' %in% ch[i,which(ch[i,]==2)+16][which(z[which(ch[i,]==2)+17]==3)] & length(z[which(ch[i,]==2)+17][which(z[which(ch[i,]==2)+17]==3)])>=1){z[which(ch[i,]==2)+17][which(z[which(ch[i,]==2)+17]==3)]<-4}
-      
-      if(min(ch[i,which(z==3)-1], na.rm=T)>1){z[v]<-4}
-      #else if y<-which(z==4)
-      #x<-y-1
-      #q<-which(ch[i,x]==1)
-      #z[y[q-1]]<-3
-      #if(length(names(which(ch[i,y-1]==3)))>0)
-      # {
-      #  z[which(ch[i,y-1]==3)+1]<-3
-      # }
-    }
-    #print(i);print(ch[i,]);print(z)
-    
+      #if(length(x)>=1){
+        temp<-ch[i,]
+        temp[which(is.na(temp))]<-0
+        for (j in 1:sum(rle(temp)$values == 2)){
+          if(is.na(rle(temp)$values[(which(rle(temp)$values==2)+1)[j]]==3)){next}
+          if(rle(temp)$values[(which(rle(temp)$values==2)+1)[j]]==3){
+          fourstart<-sum(rle(temp)$lengths[1:which(rle(temp)$values==2)[j]])+1
+          threestofours<-which(rle(temp)$values==3)
+          threestofours<-threestofours[threestofours>which(rle(temp)$values==2)[j]]
+          fourend<-sum(rle(temp)$lengths[1:threestofours])
+          z[fourstart:fourend]<-4}
+          else {next}
+          }
+        }
     zstart<-rbind(zstart,z)
   }
-  #for (i in 1:dim(ch)[1]){ch[i,1:f[i]] <- NA}#makes sure everything before and including first value is an NA
-  return(zstart)
+      return(zstart)
 }
 
 zst=ms.init.z(rCH,f)

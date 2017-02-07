@@ -88,8 +88,8 @@ mean.fUF[g]~dunif(0,1)# Priors for mean group-specific prob of rep for dorm (pre
 mu.fUF[g]<-log(mean.fUF[g]/(1-mean.fUF[g]))
 mean.dV[g]~dunif(0,1)# Priors for mean group-specific dormancy for veg plants
 mu.dV[g]<-log(mean.dV[g]/(1-mean.dV[g]))
-mean.dF[g]~dunif(0,1)# Priors for mean group-specific dormancy for rep plants
 mu.dF[g]<-log(mean.dF[g]/(1-mean.dF[g]))
+mean.dF[g]~dunif(0,1)# Priors for mean group-specific dormancy for rep plants
 mean.dUV[g]~dunif(0,1)# Priors for mean group-specific dormancy for dorm (prev veg) plants
 mu.dUV[g]<-log(mean.dUV[g]/(1-mean.dUV[g]))
 mean.dUF[g]~dunif(0,1)# Priors for mean group-specific dormancy for dorm (prev rep) plants

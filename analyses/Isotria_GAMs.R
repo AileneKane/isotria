@@ -9,7 +9,7 @@ setwd("~/git/isotria/analyses")
 # read in climate data
 ClimDat = read.csv("isotria_clim.csv", header = T)#cleaned/summarized climatedata
 # read in isotria data
-FlwrDat = read.csv("probfl.csv")
+FlwrDat = read.csv("probemerg.csv")
 colnames(FlwrDat)[1]<-"year"
 # both files need year in lower case as a column for matching data sets
 #ClimDat=subset(ClimDat,year>1982 & year<2015)
