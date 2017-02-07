@@ -403,8 +403,8 @@ ms.init.z <- function(ch, f){#ms.init.z gives starting values of 3 or 4 to all u
     w<-which(z<3)
     x<-which(z==2)
     z[-v] <- NA#observed states get NA
-    if(length(x)==0){z<-z}
-    else if(length(which(z==3))> 0 & length(x)>0 & !('2' %in% ch[i,which(z==3)-1])){z=z}
+    if(length(x)==0){z[w]<-NA}
+    else if(length(which(z==3))> 0 & length(x)>0 & !('2' %in% ch[i,which(z==3)-1])){z[w]<-NA}
     else if(length(which(ch[i,]>=3))==0){
       z[w]<-NA
     } else if (length(which(z==3))> 0 & length(x)>0 & '2' %in% ch[i,which(z==3)-1])
