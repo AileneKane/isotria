@@ -430,7 +430,7 @@ ms.init.z <- function(ch, f){#ms.init.z gives starting values of 3 or 4 to all u
 
 
 
-for (i in 1:length(sim_ds){
+#for (i in 1:length(sim_ds){
   
 zst=ms.init.z(rCH,f)
 # Bundle data
@@ -464,4 +464,214 @@ write.csv(mod.table2,"isotria4stage_modtablesim.csv")
 
 #simulate 100 datasets, then fit the model to each dataset let run for 5000 iterations for each.
 #Andy writes a function that saves output. 
+
+
+#Now try fitting 2-stage model to simulated data and see how it does:
+sink("ms-ranef2stages.jags")
+cat("
+    
+    model {
+    # -------------------------------------------------
+    # Parameters:
+    # sV: survival probability for nonreproductive plants
+    # sF: survival probability for reproductive plants
+    # fV: reproduction probability for vegetative plants
+    # fF: reproduction probability for reproductive plants
+    
+    # sV: survival probability for nonreproductive plants
+    # sF: survival probability for reproductive plants
+    # fV: transition probability from nonreproductive to fruiting
+    # fF: transition probability from reproductive to nonfruiting
+    # pV: emergence probability for nonreproductive plants
+    # pF: emergence probability for reproductive plants
+    # -------------------------------------------------
+    # States (S):
+    # 1 alive and nonreproductive
+    # 2 alive and reproductive
+    # 3 dead
+    # Observations (O):  
+    # 1 seen nonreproductive
+    # 2 seen reproductive
+    # 3 not seen
+    # -------------------------------------------------
+    
+    # Model, priors and constraints
+    for (i in 1:nind){
+    for (t in f[i]:(n.occasions-1)){
+    logit(sV[i,t]) <- eta.sV[group[i],t]
+    logit(sF[i,t]) <- eta.sF[group[i],t]
+    logit(fV[i,t]) <- eta.fV[group[i],t]
+    logit(fF[i,t]) <- eta.fF[group[i],t]
+    logit(pV[i,t]) <- eta.pV[group[i],t]
+    logit(pF[i,t]) <- eta.pF[group[i],t]    
+    }#t
+    }#i
+    for (g in 1:2){#group  
+    for (t in 1:(n.occasions-1)){
+    eta.sV[g,t]  <-mu.sV[g]+beta.sV[g]*x[g,t]+beta1.sV[g]*x1[g,t]+epsilon.sV[g,t]
+    eta.sF[g,t]  <-mu.sF[g]+beta.sF[g]*x[g,t]+beta1.sF[g]*x1[g,t]+epsilon.sF[g,t]
+    eta.fV[g,t]  <-mu.fV[g]+beta.fV[g]*x[g,t]+beta1.fV[g]*x1[g,t]+epsilon.fV[g,t]
+    eta.fF[g,t]  <-mu.fF[g]+beta.fF[g]*x[g,t]+beta1.fF[g]*x1[g,t]+epsilon.fF[g,t]
+    eta.pV[g,t]  <-mu.pV[g]+beta.pV[g]*x[g,t]+beta1.pV[g]*x1[g,t]+epsilon.pV[g,t]
+    eta.pF[g,t]  <-mu.pF[g]+beta.pF[g]*x[g,t]+beta1.pF[g]*x1[g,t]+epsilon.pF[g,t]
+    epsilon.sV[g,t]~dnorm(0,tau.sV[g])#could move all the mean stuff to this part, might help model mix better? hierarchical centering
+    epsilon.sF[g,t]~dnorm(0,tau.sF[g])
+    epsilon.fV[g,t]~dnorm(0,tau.fV[g])
+    epsilon.fF[g,t]~dnorm(0,tau.fF[g])
+    epsilon.pV[g,t]~dnorm(0,tau.pV[g])
+    epsilon.pF[g,t]~dnorm(0,tau.pF[g])
+    }#t
+    mean.sV[g]~dunif(0,1)# Priors for mean group-specific survival for veg plants
+    mu.sV[g]<-log(mean.sV[g]/(1-mean.sV[g]))  
+    mean.sF[g]~dunif(0,1)# Priors for mean group-specific survivalsurvival for rep plants
+    mu.sF[g]<-log(mean.sF[g]/(1-mean.sF[g]))    
+    mean.fV[g]~dunif(0,1)# Priors for mean group-specific transition from veg to rep plants
+    mu.fV[g]<-log(mean.fV[g]/(1-mean.fV[g]))       
+    mean.fF[g]~dunif(0,1)# Priors for mean group-specific transition from rep to veg plants
+    mu.fF[g]<-log(mean.fF[g]/(1-mean.fF[g]))    
+    mean.pV[g]~dunif(0,1)#Priors for mean group-specific detection (emergence) probability or veg plants
+    mu.pV[g]<-log(mean.pV[g]/(1-mean.pV[g]))   
+    mean.pF[g]~dunif(0,1)#Priors for mean group-specific detection (emergence) probability or veg plants
+    mu.pF[g]<-log(mean.pF[g]/(1-mean.pF[g]))    
+    sigma.sV[g]~dunif(0,10)#temporal variance for veg plants survival
+    tau.sV[g]<-pow(sigma.sV[g],-2)
+    sigma.sV2[g]<-pow(sigma.sV[g],2)
+    sigma.sF[g]~dunif(0,10)#temporal variance for rep plants survival
+    tau.sF[g]<-pow(sigma.sF[g],-2)
+    sigma.sF2[g]<-pow(sigma.sF[g],2)
+    sigma.fV[g]~dunif(0,10)#temporal variance for veg plants transition to rep
+    tau.fV[g]<-pow(sigma.fV[g],-2)
+    sigma.fV2[g]<-pow(sigma.fV[g],2)
+    sigma.fF[g]~dunif(0,10)#temporal variance for rep plants transition to veg
+    tau.fF[g]<-pow(sigma.fF[g],-2)
+    sigma.fF2[g]<-pow(sigma.fF[g],2)
+    sigma.pV[g]~dunif(0,10)#temporal variance for veg plants recapture (emergence)
+    tau.pV[g]<-pow(sigma.pV[g],-2)
+    sigma.pV2[g]<-pow(sigma.pV[g],2)
+    sigma.pF[g]~dunif(0,10)#temporal variance for rep plants recapture (emergence)
+    tau.pF[g]<-pow(sigma.pF[g],-2)
+    sigma.pF2[g]<-pow(sigma.pF[g],2)
+    beta.sV[g]~dnorm(0,0.001)I(-10,10)
+    beta.sF[g]~dnorm(0,0.001)I(-10,10)
+    beta.fV[g]~dnorm(0,0.001)I(-10,10)
+    beta.fF[g]~dnorm(0,0.001)I(-10,10)
+    beta.pV[g]~dnorm(0,0.001)I(-10,10)
+    beta.pF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.pV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.pF[g]~dnorm(0,0.001)I(-10,10)
+    #calculate probabilities of four differnt groups to look at later... 
+    logit(sV0[g])<- mu.sV[g]
+    logit(sV1[g])<- mu.sV[g] + beta.sV[g]
+    logit(sF0[g])<- mu.sF[g]
+    logit(sF1[g])<- mu.sF[g] + beta.sF[g]
+    logit(fV0[g])<- mu.fV[g]
+    logit(fV1[g])<- mu.fV[g] + beta.fV[g]
+    logit(fF0[g])<- mu.fF[g]
+    logit(fF1[g])<- mu.fF[g] + beta.fF[g]
+    logit(pV0[g])<- mu.pV[g]
+    logit(pV1[g])<- mu.pV[g] + beta.pV[g]
+    logit(pF0[g])<- mu.pF[g]
+    logit(pF1[g])<- mu.pF[g] + beta.pF[g]
+    }#g
+    
+    # Define state-transition and observation matrices
+    for (i in 1:nind){  
+    # Define probabilities of state S(t+1) given S(t)
+    for (t in f[i]:(n.occasions-1)){
+    ps[1,i,t,1] <- sV[i,t] * (1-fV[i,t])
+    ps[1,i,t,2] <- sV[i,t] * fV[i,t]
+    ps[1,i,t,3] <- 1-sV[i,t]
+    ps[2,i,t,1] <- sF[i,t] * (1-fF[i,t])
+    ps[2,i,t,2] <- sF[i,t] * (fF[i,t])
+    ps[2,i,t,3] <- 1-sF[i,t]
+    ps[3,i,t,1] <- 0
+    ps[3,i,t,2] <- 0
+    ps[3,i,t,3] <- 1
+    
+    # Define probabilities of O(t) given S(t) ##first coumn is observed state, last is true state
+    po[1,i,t,1] <- pV[i,t]
+    po[1,i,t,2] <- 0
+    po[1,i,t,3] <- 1-pV[i,t]
+    po[2,i,t,1] <- 0
+    po[2,i,t,2] <- pF[i,t]
+    po[2,i,t,3] <- 1-pF[i,t]
+    po[3,i,t,1] <- 0
+    po[3,i,t,2] <- 0
+    po[3,i,t,3] <- 1
+    } #t
+    } #i
+    
+    # Likelihood 
+    for (i in 1:nind){
+    # Define latent state at first capture
+    z[i,f[i]] <- y[i,f[i]]
+    for (t in (f[i]+1):n.occasions){
+    # State process: draw S(t) given S(t-1)
+    z[i,t] ~ dcat(ps[z[i,t-1], i, t-1,])
+    # Observation process: draw O(t) given S(t)
+    y[i,t] ~ dcat(po[z[i,t], i, t-1,])
+    } #t
+    } #i
+    }
+    ",fill = TRUE)
+sink()
+
+#Function to create known latent state z
+########
+known.state.ms <- function(ch){##removes 3s and replaces them with NAs, and replaces first observation with NA
+  state <- ch
+  for (i in 1:dim(ch)[1]){
+    n1 <- min(which(ch[i,]<3))#
+    state[i,n1] <- NA
+  }
+  state[state==3] <- NA
+  return(state)
+}
+#Function to get starting values
+ms.init.z <- function(ch, f){#ms.init.z gives starting values of 1 or 2 to all unknown states
+  for (i in 1:dim(ch)[1]){ch[i,1:f[i]] <- NA}
+  n1 <- min(which(ch[i,]<3))#
+  states <- max(ch, na.rm = TRUE)
+  known.states <- 1:(states-1)
+  v <- which(ch==states)#which occurences are unknown states (=3)
+  ch[-v] <- NA#everyhing else besides the 3s gets an NA
+  ch[v] <- sample(known.states, length(v), replace = TRUE)##gives all unseen occurrences (3s) a starting value that is a random sampling of either 1 or 2
+  #ch[i,n1] <- NA#make first observance an NA (ot a 3)
+  return(ch)
+}
+
+zst=ms.init.z(rCH,f)
+#
+# Bundle data
+jags.data <- list(y = rCH, f = f, n.occasions = dim(rCH)[2], nind = dim(rCH)[1], z = known.state.ms(rCH),group=group, x=time_log, x1=logged_yrs2)
+
+# Initial values
+inits<-function(){list(mean.sV=c(.5,.5), mean.sF=c(.5,.5),mean.fV=c(.5,.5),mean.fF=c(.5,.5),mean.pV=c(.5,.5),mean.pF=c(.5,.5),sigma.sV=c(1,1),sigma.sF=c(1,1),sigma.fV=c(1,1),sigma.fF=c(1,1),sigma.pV=c(1,1),sigma.pF=c(1,1),z = zst)}
+# Parameters monitored
+parameters <- c("mean.sV","mean.sF","mean.sUV","mean.sUF", "mean.fV","mean.fF","mean.fUV","mean.fUF","mean.dV","mean.dF","mean.dUV","mean.dUF","beta.sV","beta.sF", "beta.sUV","beta.sUF","beta.fV","beta.fF","beta.fUV","beta.fUF","beta.dV", "beta.dF", "beta.dUV","beta.dUF","sV0","sV1","sF0","sF1","sUV0","sUF0","sUV1","sUF1","fV0","fV1","fF0","fF1","fUV0","fUV1","fUF0","fUF1","dV0","dV1","dF0","dF1","dUV0","dUF0","dUV1","dUF1","beta1.sV","beta1.sF","beta1.sUV","beta1.sUF","beta1.fV","beta1.fF","beta1.fUV","beta1.fUF","beta1.dV", "beta1.dF","beta1.dUV","beta1.dUF","mu.sV","mu.sF","mu.sUV","mu.sUF","mu.fV","mu.fF","mu.fUV","mu.fUF","mu.dV","mu.dF","mu.dUV","mu.dUF","sigma.sV2","sigma.sF2","sigma.sUV2","sigma.sUF2","sigma.fV2","sigma.fF2","sigma.fUV2","sigma.fUF2","sigma.dV2","sigma.dF2","sigma.dUV2","sigma.dUF2")
+
+# MCMC settings
+ni <- 2500
+nt <- 5
+nb <- 500
+nc <- 3
+
+# Call JAGS from R #
+#complex model
+ms2.rf <- jags(jags.data, inits, parameters, "ms-ranef2stages.jags", n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb, parallel=T)
+print(ms2.rf, digits=3)
+###save all samples
+mod.samples_4stage<- as.data.frame(do.call("rbind", ms4.rf$samples))
+write.csv(mod.samples_4stage,"msmod_samples_4stagesim.csv",row.names=T)
+
+##Table of model summary, with betas
+mod.sum<-ms4.rf$summary
+write.csv(mod.sum,"isotria4stagemodsumsim.csv", row.names=T)
+mod.table<-round(subset(mod.sum, select=c("mean","sd","Rhat", "n.eff")), digits=3)
+mod.table2<-rbind(mod.table[which(substr(rownames(mod.table),1,2)=="mu"),],mod.table[which(substr(rownames(mod.table),1,4)=="beta"),])
+write.csv(mod.table2,"isotria4stage_modtablesim.csv")
 
