@@ -5,7 +5,7 @@
 #the model here allows vital rate estimates in the multistate model to vary independently among years in their random effect structure
 #
 #setwd("~/isotria") #at usgs
-#setwd("~/Dropbox/Documents/Work/projects_inprog/isotria/analyses/MultistateModels")
+setwd("~/git/isotria/analyses")
 rm(list=ls()) 
 options(stringsAsFactors=FALSE)
 
@@ -14,7 +14,7 @@ library(jagsUI)
 library(lattice)
 library(coda)
 library(boot)
-#update.packages()
+#yupdate.packages()
 isoinds<-read.csv("Isotria_Stage3_2016.csv", header=T)#
 isoinds<-isoinds[-which(isoinds$UniqueID=="X-01-244"),]#individual has to be removed because of errors in its monitoring
 #Add column for emergent/nonemergent
@@ -60,18 +60,23 @@ time_log<-rbind(logged_y,logged_y)#to test differene between groups before and a
 #Fit a multistate model in JAGS, with random effects of year####
 #The random effect allows time-variance for all vital rates (i.e. random effect of time), plus fixed effect of group (X vs Y)
 
-sink("ms-ranef3a.jags")
+sink("ms-ranef2stages.jags")
 cat("
 
 model {
     # -------------------------------------------------
     # Parameters:
-    # phiA: survival probability for nonreproductive plants
-    # phiB: survival probability for reproductive plants
-    # psiAB: transition probability from nonreproductive to fruiting
-    # psiBA: transition probability from reproductive to nonfruiting
-    # pA: emergence probability for nonreproductive plants
-    # pB: emergence probability for reproductive plants
+    # sV: survival probability for nonreproductive plants
+    # sF: survival probability for reproductive plants
+    # fV: reproduction probability for vegetative plants
+    # fF: reproduction probability for reproductive plants
+    
+    # sV: survival probability for nonreproductive plants
+    # sF: survival probability for reproductive plants
+    # fV: transition probability from nonreproductive to fruiting
+    # fFA: transition probability from reproductive to nonfruiting
+    # pV: emergence probability for nonreproductive plants
+    # pF: emergence probability for reproductive plants
     # -------------------------------------------------
     # States (S):
     # 1 alive and nonreproductive
@@ -86,107 +91,107 @@ model {
     # Model, priors and constraints
     for (i in 1:nind){
     for (t in f[i]:(n.occasions-1)){
-    logit(phiA[i,t]) <- eta.phiA[group[i],t]
-    logit(phiB[i,t]) <- eta.phiB[group[i],t]
-    logit(psiAB[i,t]) <- eta.psiAB[group[i],t]
-    logit(psiBA[i,t]) <- eta.psiBA[group[i],t]
-    logit(pA[i,t]) <- eta.pA[group[i],t]
-    logit(pB[i,t]) <- eta.pB[group[i],t]    
+    logit(sV[i,t]) <- eta.sV[group[i],t]
+    logit(sF[i,t]) <- eta.sF[group[i],t]
+    logit(fV[i,t]) <- eta.fV[group[i],t]
+    logit(fFA[i,t]) <- eta.fFA[group[i],t]
+    logit(pV[i,t]) <- eta.pV[group[i],t]
+    logit(pF[i,t]) <- eta.pF[group[i],t]    
     }#t
     }#i
     for (g in 1:2){#group  
     for (t in 1:(n.occasions-1)){
-    eta.phiA[g,t]  <-mu.phiA[g]+beta.phiA[g]*x[g,t]+beta1.phiA[g]*x1[g,t]+epsilon.phiA[g,t]
-    eta.phiB[g,t]  <-mu.phiB[g]+beta.phiB[g]*x[g,t]+beta1.phiB[g]*x1[g,t]+epsilon.phiB[g,t]
-    eta.psiAB[g,t]  <-mu.psiAB[g]+beta.psiAB[g]*x[g,t]+beta1.psiAB[g]*x1[g,t]+epsilon.psiAB[g,t]
-    eta.psiBA[g,t]  <-mu.psiBA[g]+beta.psiBA[g]*x[g,t]+beta1.psiBA[g]*x1[g,t]+epsilon.psiBA[g,t]
-    eta.pA[g,t]  <-mu.pA[g]+beta.pA[g]*x[g,t]+beta1.pA[g]*x1[g,t]+epsilon.pA[g,t]
-    eta.pB[g,t]  <-mu.pB[g]+beta.pB[g]*x[g,t]+beta1.pB[g]*x1[g,t]+epsilon.pB[g,t]
-    epsilon.phiA[g,t]~dnorm(0,tau.phiA[g])#could move all the mean stuff to this part, might help model mix better? hierarchical centering
-    epsilon.phiB[g,t]~dnorm(0,tau.phiB[g])
-    epsilon.psiAB[g,t]~dnorm(0,tau.psiAB[g])
-    epsilon.psiBA[g,t]~dnorm(0,tau.psiBA[g])
-    epsilon.pA[g,t]~dnorm(0,tau.pA[g])
-    epsilon.pB[g,t]~dnorm(0,tau.pB[g])
+    eta.sV[g,t]  <-mu.sV[g]+beta.sV[g]*x[g,t]+beta1.sV[g]*x1[g,t]+epsilon.sV[g,t]
+    eta.sF[g,t]  <-mu.sF[g]+beta.sF[g]*x[g,t]+beta1.sF[g]*x1[g,t]+epsilon.sF[g,t]
+    eta.fV[g,t]  <-mu.fV[g]+beta.fV[g]*x[g,t]+beta1.fV[g]*x1[g,t]+epsilon.fV[g,t]
+    eta.fFA[g,t]  <-mu.fFA[g]+beta.fFA[g]*x[g,t]+beta1.fFA[g]*x1[g,t]+epsilon.fFA[g,t]
+    eta.pV[g,t]  <-mu.pV[g]+beta.pV[g]*x[g,t]+beta1.pV[g]*x1[g,t]+epsilon.pV[g,t]
+    eta.pF[g,t]  <-mu.pF[g]+beta.pF[g]*x[g,t]+beta1.pF[g]*x1[g,t]+epsilon.pF[g,t]
+    epsilon.sV[g,t]~dnorm(0,tau.sV[g])#could move all the mean stuff to this part, might help model mix better? hierarchical centering
+    epsilon.sF[g,t]~dnorm(0,tau.sF[g])
+    epsilon.fV[g,t]~dnorm(0,tau.fV[g])
+    epsilon.fFA[g,t]~dnorm(0,tau.fFA[g])
+    epsilon.pV[g,t]~dnorm(0,tau.pV[g])
+    epsilon.pF[g,t]~dnorm(0,tau.pF[g])
     }#t
-    mean.phiA[g]~dunif(0,1)# Priors for mean group-specific survival for veg plants
-    mu.phiA[g]<-log(mean.phiA[g]/(1-mean.phiA[g]))  
-    mean.phiB[g]~dunif(0,1)# Priors for mean group-specific survivalsurvival for rep plants
-    mu.phiB[g]<-log(mean.phiB[g]/(1-mean.phiB[g]))    
-    mean.psiAB[g]~dunif(0,1)# Priors for mean group-specific transition from veg to rep plants
-    mu.psiAB[g]<-log(mean.psiAB[g]/(1-mean.psiAB[g]))       
-    mean.psiBA[g]~dunif(0,1)# Priors for mean group-specific transition from rep to veg plants
-    mu.psiBA[g]<-log(mean.psiBA[g]/(1-mean.psiBA[g]))    
-    mean.pA[g]~dunif(0,1)#Priors for mean group-specific detection (emergence) probability or veg plants
-    mu.pA[g]<-log(mean.pA[g]/(1-mean.pA[g]))   
-    mean.pB[g]~dunif(0,1)#Priors for mean group-specific detection (emergence) probability or veg plants
-    mu.pB[g]<-log(mean.pB[g]/(1-mean.pB[g]))    
-    sigma.phiA[g]~dunif(0,10)#temporal variance for veg plants survival
-    tau.phiA[g]<-pow(sigma.phiA[g],-2)
-    sigma.phiA2[g]<-pow(sigma.phiA[g],2)
-    sigma.phiB[g]~dunif(0,10)#temporal variance for rep plants survival
-    tau.phiB[g]<-pow(sigma.phiB[g],-2)
-    sigma.phiB2[g]<-pow(sigma.phiB[g],2)
-    sigma.psiAB[g]~dunif(0,10)#temporal variance for veg plants transition to rep
-    tau.psiAB[g]<-pow(sigma.psiAB[g],-2)
-    sigma.psiAB2[g]<-pow(sigma.psiAB[g],2)
-    sigma.psiBA[g]~dunif(0,10)#temporal variance for rep plants transition to veg
-    tau.psiBA[g]<-pow(sigma.psiBA[g],-2)
-    sigma.psiBA2[g]<-pow(sigma.psiBA[g],2)
-    sigma.pA[g]~dunif(0,10)#temporal variance for veg plants recapture (emergence)
-    tau.pA[g]<-pow(sigma.pA[g],-2)
-    sigma.pA2[g]<-pow(sigma.pA[g],2)
-    sigma.pB[g]~dunif(0,10)#temporal variance for rep plants recapture (emergence)
-    tau.pB[g]<-pow(sigma.pB[g],-2)
-    sigma.pB2[g]<-pow(sigma.pB[g],2)
-    beta.phiA[g]~dnorm(0,0.001)I(-10,10)
-    beta.phiB[g]~dnorm(0,0.001)I(-10,10)
-    beta.psiAB[g]~dnorm(0,0.001)I(-10,10)
-    beta.psiBA[g]~dnorm(0,0.001)I(-10,10)
-    beta.pA[g]~dnorm(0,0.001)I(-10,10)
-    beta.pB[g]~dnorm(0,0.001)I(-10,10)
-    beta1.phiA[g]~dnorm(0,0.001)I(-10,10)
-    beta1.phiB[g]~dnorm(0,0.001)I(-10,10)
-    beta1.psiAB[g]~dnorm(0,0.001)I(-10,10)
-    beta1.psiBA[g]~dnorm(0,0.001)I(-10,10)
-    beta1.pA[g]~dnorm(0,0.001)I(-10,10)
-    beta1.pB[g]~dnorm(0,0.001)I(-10,10)
+    mean.sV[g]~dunif(0,1)# Priors for mean group-specific survival for veg plants
+    mu.sV[g]<-log(mean.sV[g]/(1-mean.sV[g]))  
+    mean.sF[g]~dunif(0,1)# Priors for mean group-specific survivalsurvival for rep plants
+    mu.sF[g]<-log(mean.sF[g]/(1-mean.sF[g]))    
+    mean.fV[g]~dunif(0,1)# Priors for mean group-specific transition from veg to rep plants
+    mu.fV[g]<-log(mean.fV[g]/(1-mean.fV[g]))       
+    mean.fFA[g]~dunif(0,1)# Priors for mean group-specific transition from rep to veg plants
+    mu.fFA[g]<-log(mean.fFA[g]/(1-mean.fFA[g]))    
+    mean.pV[g]~dunif(0,1)#Priors for mean group-specific detection (emergence) probability or veg plants
+    mu.pV[g]<-log(mean.pV[g]/(1-mean.pV[g]))   
+    mean.pF[g]~dunif(0,1)#Priors for mean group-specific detection (emergence) probability or veg plants
+    mu.pF[g]<-log(mean.pF[g]/(1-mean.pF[g]))    
+    sigma.sV[g]~dunif(0,10)#temporal variance for veg plants survival
+    tau.sV[g]<-pow(sigma.sV[g],-2)
+    sigma.sV2[g]<-pow(sigma.sV[g],2)
+    sigma.sF[g]~dunif(0,10)#temporal variance for rep plants survival
+    tau.sF[g]<-pow(sigma.sF[g],-2)
+    sigma.sF2[g]<-pow(sigma.sF[g],2)
+    sigma.fV[g]~dunif(0,10)#temporal variance for veg plants transition to rep
+    tau.fV[g]<-pow(sigma.fV[g],-2)
+    sigma.fV2[g]<-pow(sigma.fV[g],2)
+    sigma.fFA[g]~dunif(0,10)#temporal variance for rep plants transition to veg
+    tau.fFA[g]<-pow(sigma.fFA[g],-2)
+    sigma.fFA2[g]<-pow(sigma.fFA[g],2)
+    sigma.pV[g]~dunif(0,10)#temporal variance for veg plants recapture (emergence)
+    tau.pV[g]<-pow(sigma.pV[g],-2)
+    sigma.pV2[g]<-pow(sigma.pV[g],2)
+    sigma.pF[g]~dunif(0,10)#temporal variance for rep plants recapture (emergence)
+    tau.pF[g]<-pow(sigma.pF[g],-2)
+    sigma.pF2[g]<-pow(sigma.pF[g],2)
+    beta.sV[g]~dnorm(0,0.001)I(-10,10)
+    beta.sF[g]~dnorm(0,0.001)I(-10,10)
+    beta.fV[g]~dnorm(0,0.001)I(-10,10)
+    beta.fFA[g]~dnorm(0,0.001)I(-10,10)
+    beta.pV[g]~dnorm(0,0.001)I(-10,10)
+    beta.pF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.sF[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.fFA[g]~dnorm(0,0.001)I(-10,10)
+    beta1.pV[g]~dnorm(0,0.001)I(-10,10)
+    beta1.pF[g]~dnorm(0,0.001)I(-10,10)
     #calculate probabilities of four differnt groups to look at later... 
-    logit(phiA0[g])<- mu.phiA[g]
-    logit(phiA1[g])<- mu.phiA[g] + beta.phiA[g]
-    logit(phiB0[g])<- mu.phiB[g]
-    logit(phiB1[g])<- mu.phiB[g] + beta.phiB[g]
-    logit(psiA0[g])<- mu.psiAB[g]
-    logit(psiA1[g])<- mu.psiAB[g] + beta.psiAB[g]
-    logit(psiB0[g])<- mu.psiBA[g]
-    logit(psiB1[g])<- mu.psiBA[g] + beta.psiBA[g]
-    logit(pA0[g])<- mu.pA[g]
-    logit(pA1[g])<- mu.pA[g] + beta.pA[g]
-    logit(pB0[g])<- mu.pB[g]
-    logit(pB1[g])<- mu.pB[g] + beta.pB[g]
+    logit(sV0[g])<- mu.sV[g]
+    logit(sV1[g])<- mu.sV[g] + beta.sV[g]
+    logit(sF0[g])<- mu.sF[g]
+    logit(sF1[g])<- mu.sF[g] + beta.sF[g]
+    logit(fV0[g])<- mu.fV[g]
+    logit(fV1[g])<- mu.fV[g] + beta.fV[g]
+    logit(fF0[g])<- mu.fFA[g]
+    logit(fF1[g])<- mu.fFA[g] + beta.fFA[g]
+    logit(pV0[g])<- mu.pV[g]
+    logit(pV1[g])<- mu.pV[g] + beta.pV[g]
+    logit(pF0[g])<- mu.pF[g]
+    logit(pF1[g])<- mu.pF[g] + beta.pF[g]
     }#g
     
     # Define state-transition and observation matrices
     for (i in 1:nind){  
     # Define probabilities of state S(t+1) given S(t)
     for (t in f[i]:(n.occasions-1)){
-    ps[1,i,t,1] <- phiA[i,t] * (1-psiAB[i,t])
-    ps[1,i,t,2] <- phiA[i,t] * psiAB[i,t]
-    ps[1,i,t,3] <- 1-phiA[i,t]
-    ps[2,i,t,1] <- phiB[i,t] * psiBA[i,t]
-    ps[2,i,t,2] <- phiB[i,t] * (1-psiBA[i,t])
-    ps[2,i,t,3] <- 1-phiB[i,t]
+    ps[1,i,t,1] <- sV[i,t] * (1-fV[i,t])
+    ps[1,i,t,2] <- sV[i,t] * fV[i,t]
+    ps[1,i,t,3] <- 1-sV[i,t]
+    ps[2,i,t,1] <- sF[i,t] * (1-fF[i,t])
+    ps[2,i,t,2] <- sF[i,t] * (fF[i,t])
+    ps[2,i,t,3] <- 1-sF[i,t]
     ps[3,i,t,1] <- 0
     ps[3,i,t,2] <- 0
     ps[3,i,t,3] <- 1
     
     # Define probabilities of O(t) given S(t) ##first coumn is observed state, last is true state
-    po[1,i,t,1] <- pA[i,t]
+    po[1,i,t,1] <- pV[i,t]
     po[1,i,t,2] <- 0
-    po[1,i,t,3] <- 1-pA[i,t]
+    po[1,i,t,3] <- 1-pV[i,t]
     po[2,i,t,1] <- 0
-    po[2,i,t,2] <- pB[i,t]
-    po[2,i,t,3] <- 1-pB[i,t]
+    po[2,i,t,2] <- pF[i,t]
+    po[2,i,t,3] <- 1-pF[i,t]
     po[3,i,t,1] <- 0
     po[3,i,t,2] <- 0
     po[3,i,t,3] <- 1
@@ -247,10 +252,10 @@ zst1[119,21:31]<-NA
 jags.data <- list(y = isoall_CH.ms, f = f, n.occasions = dim(isoall_CH.ms)[2], nind = dim(isoall_CH.ms)[1], z = known.state.ms(isoall_CH.ms), group=group, x=time_log, x1=logged_yrs2)
 
 # Initial values
-inits3a<-function(){list(mean.phiA=c(.5,.5), mean.phiB=c(.5,.5),mean.psiAB=c(.5,.5),mean.psiBA=c(.5,.5),mean.pA=c(.5,.5),mean.pB=c(.5,.5),sigma.phiB=c(1,1),sigma.psiAB=c(1,1),sigma.psiBA=c(1,1),sigma.pA=c(1,1),sigma.pB=c(1,1),z = zst1)}#Error in jags.model(file = model.file, data = data, inits = inits, n.chains = n.chains,  : #Error in node y[1,3]
+inits3a<-function(){list(mean.sV=c(.5,.5), mean.sF=c(.5,.5),mean.fV=c(.5,.5),mean.fF=c(.5,.5),mean.pV=c(.5,.5),mean.pF=c(.5,.5),sigma.sF=c(1,1),sigma.fV=c(1,1),sigma.fF=c(1,1),sigma.pV=c(1,1),sigma.pF=c(1,1),z = zst1)}#Error in jags.model(file = model.file, data = data, inits = inits, n.chains = n.chains,  : #Error in node y[1,3]
 
 # Parameters monitored
-parameters <- c("mean.phiA","mean.phiB", "mean.psiAB","mean.psiBA","mean.pA","mean.pB","beta.phiA","beta.phiB", "beta.pA", "beta.pB", "beta.psiAB","beta.psiBA","phiA0","phiA1","phiB0","phiB1","psiA0","psiA1","psiB0","psiB1","pA0","pA1","pB0","pB1","beta1.phiA","beta1.phiB", "beta1.pA", "beta1.pB", "beta1.psiAB","beta1.psiBA","mu.phiA","mu.phiB","mu.pA","mu.pB","mu.psiAB","mu.psiBA","sigma.phiA2","sigma.phiB2","sigma.pA2","sigma.pB2","sigma.phiB2","sigma.psiAB2","sigma.psiBA2")
+parameters <- c("mean.sV","mean.sF", "mean.fV","mean.fF","mean.pV","mean.pF","beta.sV","beta.sF", "beta.pV", "beta.pF", "beta.fV","beta.fF","sV0","sV1","sF0","sF1","fV0","fV1","fF0","fF1","pV0","pV1","pF0","pF1","beta1.sV","beta1.sF", "beta1.pV", "beta1.pF", "beta1.fV","beta1.fFA","mu.sV","mu.sF","mu.pV","mu.pF","mu.fV","mu.fFA","sigma.sV2","sigma.sF2","sigma.pV2","sigma.pF2","sigma.sF2","sigma.fV2","sigma.fFA2")
 
 # MCMC settings
 ni <- 25000
@@ -271,25 +276,25 @@ mod.samples_comp<-read.csv("msmod_samples_complex.csv", header=T)
 ##Figures
 #2x2table for each vital rate with first column control, second column logged
 #first row before logging, second row after logging
-surv_veg<-as.data.frame(rbind(ms.rf3a$mean$phiA0,ms.rf3a$mean$phiA1))
-surv_rep<-as.data.frame(rbind(ms.rf3a$mean$phiB0,ms.rf3a$mean$phiB1))
-trans_vr<-as.data.frame(rbind(ms.rf3a$mean$psiA0,ms.rf3a$mean$psiA1))
-trans_rv<-as.data.frame(rbind(ms.rf3a$mean$psiB0,ms.rf3a$mean$psiB1))
-emer_veg<-as.data.frame(rbind(ms.rf3a$mean$pA0,ms.rf3a$mean$pA1))
-emer_rep<-as.data.frame(rbind(ms.rf3a$mean$pB0,ms.rf3a$mean$pB1))
+surv_veg<-as.data.frame(rbind(ms.rf3a$mean$sV0,ms.rf3a$mean$sV1))
+surv_rep<-as.data.frame(rbind(ms.rf3a$mean$sF0,ms.rf3a$mean$sF1))
+trans_vr<-as.data.frame(rbind(ms.rf3a$mean$fV0,ms.rf3a$mean$fV1))
+trans_rv<-as.data.frame(rbind(ms.rf3a$mean$fF0,ms.rf3a$mean$fF1))
+emer_veg<-as.data.frame(rbind(ms.rf3a$mean$pV0,ms.rf3a$mean$pV1))
+emer_rep<-as.data.frame(rbind(ms.rf3a$mean$pF0,ms.rf3a$mean$pF1))
 
-surv_veg_q2.5<-c(ms.rf3a$q2.5$phiA0,ms.rf3a$q2.5$phiA1)
-surv_rep_q2.5<-c(ms.rf3a$q2.5$phiB0,ms.rf3a$q2.5$phiB1)
-trans_vr_q2.5<-c(ms.rf3a$q2.5$psiA0,ms.rf3a$q2.5$psiA1)
-trans_rv_q2.5<-c(ms.rf3a$q2.5$psiB0,ms.rf3a$q2.5$psiB1)
-emer_veg_q2.5<-c(ms.rf3a$q2.5$pA0,ms.rf3a$q2.5$pA1)
-emer_rep_q2.5<-c(ms.rf3a$q2.5$pB0,ms.rf3a$q2.5$pB1)
-surv_veg_q97.5<-c(ms.rf3a$q97.5$phiA0,ms.rf3a$q97.5$phiA1)
-surv_rep_q97.5<-c(ms.rf3a$q97.5$phiB0,ms.rf3a$q97.5$phiB1)
-trans_vr_q97.5<-c(ms.rf3a$q97.5$psiA0,ms.rf3a$q97.5$psiA1)
-trans_rv_q97.5<-c(ms.rf3a$q97.5$psiB0,ms.rf3a$q97.5$psiB1)
-emer_veg_q97.5<-c(ms.rf3a$q97.5$pA0,ms.rf3a$q97.5$pA1)
-emer_rep_q97.5<-c(ms.rf3a$q97.5$pB0,ms.rf3a$q97.5$pB1)
+surv_veg_q2.5<-c(ms.rf3a$q2.5$sV0,ms.rf3a$q2.5$sV1)
+surv_rep_q2.5<-c(ms.rf3a$q2.5$sF0,ms.rf3a$q2.5$sF1)
+trans_vr_q2.5<-c(ms.rf3a$q2.5$fV0,ms.rf3a$q2.5$fV1)
+trans_rv_q2.5<-c(ms.rf3a$q2.5$fF0,ms.rf3a$q2.5$fF1)
+emer_veg_q2.5<-c(ms.rf3a$q2.5$pV0,ms.rf3a$q2.5$pV1)
+emer_rep_q2.5<-c(ms.rf3a$q2.5$pF0,ms.rf3a$q2.5$pF1)
+surv_veg_q97.5<-c(ms.rf3a$q97.5$sV0,ms.rf3a$q97.5$sV1)
+surv_rep_q97.5<-c(ms.rf3a$q97.5$sF0,ms.rf3a$q97.5$sF1)
+trans_vr_q97.5<-c(ms.rf3a$q97.5$fV0,ms.rf3a$q97.5$fV1)
+trans_rv_q97.5<-c(ms.rf3a$q97.5$fF0,ms.rf3a$q97.5$fF1)
+emer_veg_q97.5<-c(ms.rf3a$q97.5$pV0,ms.rf3a$q97.5$pV1)
+emer_rep_q97.5<-c(ms.rf3a$q97.5$pF0,ms.rf3a$q97.5$pF1)
 
 ##Table of model summary, with betas
 mod.sum<-ms.rf3a$summary

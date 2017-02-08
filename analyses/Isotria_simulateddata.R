@@ -428,8 +428,11 @@ ms.init.z <- function(ch, f){#ms.init.z gives starting values of 3 or 4 to all u
       return(zstart)
 }
 
-zst=ms.init.z(rCH,f)
 
+
+for (i in 1:length(sim_ds){
+  
+zst=ms.init.z(rCH,f)
 # Bundle data
 jags.data <- list(y = rCH, f = f, n.occasions = dim(rCH)[2], nind = dim(rCH)[1], z = known.state.ms(rCH),group=group, x=time_log, x1=logged_yrs2)
 
@@ -439,7 +442,7 @@ inits<-function(){list(mean.sV=c(.5,.5), mean.sF=c(.5,.5),mean.sUV=c(.5,.5),mean
 parameters <- c("mean.sV","mean.sF","mean.sUV","mean.sUF", "mean.fV","mean.fF","mean.fUV","mean.fUF","mean.dV","mean.dF","mean.dUV","mean.dUF","beta.sV","beta.sF", "beta.sUV","beta.sUF","beta.fV","beta.fF","beta.fUV","beta.fUF","beta.dV", "beta.dF", "beta.dUV","beta.dUF","sV0","sV1","sF0","sF1","sUV0","sUF0","sUV1","sUF1","fV0","fV1","fF0","fF1","fUV0","fUV1","fUF0","fUF1","dV0","dV1","dF0","dF1","dUV0","dUF0","dUV1","dUF1","beta1.sV","beta1.sF","beta1.sUV","beta1.sUF","beta1.fV","beta1.fF","beta1.fUV","beta1.fUF","beta1.dV", "beta1.dF","beta1.dUV","beta1.dUF","mu.sV","mu.sF","mu.sUV","mu.sUF","mu.fV","mu.fF","mu.fUV","mu.fUF","mu.dV","mu.dF","mu.dUV","mu.dUF","sigma.sV2","sigma.sF2","sigma.sUV2","sigma.sUF2","sigma.fV2","sigma.fF2","sigma.fUV2","sigma.fUF2","sigma.dV2","sigma.dF2","sigma.dUV2","sigma.dUF2")
 
 # MCMC settings
-ni <- 2500
+ni <- 5000
 nt <- 5
 nb <- 500
 nc <- 3
@@ -448,6 +451,17 @@ nc <- 3
 #complex model
 ms4.rf <- jags(jags.data, inits, parameters, "ms-ranef4stages.jags", n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb, parallel=T)
 print(ms4.rf, digits=3)
+###save all samples
+mod.samples_4stage<- as.data.frame(do.call("rbind", ms4.rf$samples))
+write.csv(mod.samples_4stage,"msmod_samples_4stagesim.csv",row.names=T)
+
+##Table of model summary, with betas
+mod.sum<-ms4.rf$summary
+write.csv(mod.sum,"isotria4stagemodsumsim.csv", row.names=T)
+mod.table<-round(subset(mod.sum, select=c("mean","sd","Rhat", "n.eff")), digits=3)
+mod.table2<-rbind(mod.table[which(substr(rownames(mod.table),1,2)=="mu"),],mod.table[which(substr(rownames(mod.table),1,4)=="beta"),])
+write.csv(mod.table2,"isotria4stage_modtablesim.csv")
+
 #simulate 100 datasets, then fit the model to each dataset let run for 5000 iterations for each.
 #Andy writes a function that saves output. 
 
