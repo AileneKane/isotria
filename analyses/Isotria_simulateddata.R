@@ -765,11 +765,6 @@ print(ms4_2surv.rf, digits=3)
 mod.samples_4stage2surv<- as.data.frame(do.call("rbind", ms4_2surv.rf$samples))
 write.csv(mod.samples_4stage2surv,"msmod_samples_4stage_2survsim.csv",row.names=T)
 
-
-
-
-
-
 #Now try fitting 2-stage model to simulated data and see how it does:
 sink("ms-ranef2stages.jags")
 cat("
