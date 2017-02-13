@@ -50,6 +50,6 @@ for(i in 1:12){
   if(length(clim3[which(is.na(clim3$snow) & clim3$month==mos[i]),]$snow)!=0){clim3[which(is.na(clim3$snow) & clim3$month==mos[i]),]$snow<-mean(as.numeric(clim3[clim3$month==mos[i],]$snow), na.rm=T)}
   if(length(clim3[which(is.na(clim3$dsnd) & clim3$month==mos[i]),]$dsnd)!=0){clim3[which(is.na(clim3$dsnd) & clim3$month==mos[i]),]$dsnd<-mean(as.numeric(clim3[clim3$month==mos[i],]$dsnd), na.rm=T)}
 }
-clim4 <- clim3[order(clim3$year),]#order by year
+clim4 <- clim3[order(clim3$year,clim3$month),]#order by year
 write.csv(clim4,"isotria_clim.csv", row.names = FALSE)
 dim(clim4)
