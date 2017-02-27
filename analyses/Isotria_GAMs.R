@@ -1,11 +1,13 @@
 #Following Elizabeth's code to fit a GAM to isotria vital rate data, to see if climate data is associated with any vital rates
 #Feb 2017
 #By Ailene Ettinger
+rm(list=ls()) 
+
 library(mgcv)
 library(boot)
+library(reshape)
 #setwd("C:\\Users\\ecrone01\\Box Sync\\Box Sync\\recovered files\\Ailene Isotria")
 setwd("~/git/isotria/analyses")
-rm(list=ls()) 
 # read in climate data
 ClimDat = read.csv("isotria_clim.csv", header = T)#cleaned/summarized climatedata
 # read in isotria data
@@ -13,7 +15,8 @@ FlwrDat = read.csv("probfr.csv")
 colnames(FlwrDat)[1]<-"year"
 # both files need year in lower case as a column for matching data sets
 ClimDat=subset(ClimDat,year>1980 & year<2015)
-
+colnames(ClimDat)
+pairs(ClimDat[,3:9])
 # function from Teller 2016 to aggregate data by month-my data are already in this format
 aggLags<-function(datC, fun, meas, seg){
   pars <- as.list(match.call()[-1])
@@ -80,18 +83,58 @@ strt = 5
 dat1 = makeDat(useclim = ClimDat,usevr = FlwrDat, monthStart = strt)
 #str(dat1)
 #head(dat1)
+dat2<-cbind(dat1[2:7],dat1$year,dat1[8:47])
+dat3<-reshape(dat2,varying=list(names(dat2)[1:6]),direction = "long", v.names = c("probfruit"), times = c(names(dat2)[1:6]))
+dat4<-dat3[,-44]
+colnames(dat4)[42]<-"Stage"
 
 quartz(height=5,width=8)
 par(mfrow=c(2,3))
 # and now, fit a GAM for dormant(prev veg) plants
-gam0b = gam(logit(Stage_curd) ~ s(lags, by=tcovar, bs="cs"),
-            data=dat1, method="GCV.Cp",gamma=1.2, family = gaussian) 
+#try comparing model fit with stages and without stages
+#Model that includes stage:
+mod1 <- gam(Temp ~ Stage + s(lags, by=tcovar, bs="cs"),
+            data=dat4, method="GCV.Cp",gamma=1.2, family = gaussian)
+                s(Doy, bs = "cc", by = Loc, k = 5, m = 1) + 
+                s(Tod, bs = "cc", k = 5) + 
+                s(Tod, bs = "cc", by = Loc, k = 5, m = 1) +
+                te(Tod, Doy, by = Loc, bs = rep("cc",2)),
+              )
+
+#No Stage-level differences in effect of lag
+  mod0 <- gam(Temp ~ Stage + s(lags, by=tcovar, bs="cs") + 
+                s(Doy, bs = "cc", by = Loc, k = 5, m = 1) + 
+                s(Tod, bs = "cc", k = 5) + 
+                s(Tod, bs = "cc", by = Loc, k = 5, m = 1),
+              data = DatNew, method = "ML")
+
+
+
+
+gam0a = gam(logit(probfruit) ~ s(lags, by=tcovar, bs="cs"),
+            data=dat4, method="GCV.Cp",gamma=1.2, family = gaussian) 
+print(summary(gam0a))
+gam0a = gam(logit(probfruit) ~ Stage+ s(lags, by=tcovar, bs="cs"),
+            data=dat4, method="GCV.Cp",gamma=1.2, family = gaussian) 
 print(summary(gam0b))
-AIC(gam0b)
+
+AIC(gam0a,gam0b)
+
+
+layout(matrix(1:2, ncol = 2))
+plot(gam0b)
+layout(1)
+acf(resid(gam0b), lag.max = 36, main = "ACF")
+pacf(resid(gam0b), lag.max = 36, main = "ACF")
+
+
 gam1b = gam(logit(Stage_curd) ~ as.numeric(year)+s(lags, by=tcovar, bs="cs"),
             data=dat1, method="GCV.Cp",gamma=1.2, family = gaussian) 
 print(summary(gam1b))
 AIC(gam1b,gam0b)
+layout(matrix(1:2, ncol = 2))
+plot(gam1b)
+layout(1)
 
 plot(gam0b,main=paste("stage=",substr(summary(gam0b)$formula,16,17)[2],",nmos=",nUnits,"strt=",strt))
 plot(gam1b,main=paste("stage=",substr(summary(gam0b)$formula,16,17)[2],",nmos=",nUnits,"strt=",strt))

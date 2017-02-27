@@ -1,0 +1,1 @@
+Dubois_daily_alldata has missing values that are interpolated in interpClim via code titled format_daily_data.R @ .../drivers/empirical/climate

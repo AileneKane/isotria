@@ -74,20 +74,14 @@ head(present);head(future)
 colnames(future)
 future$YearFate=future$Year-1
 #Merge present and future to get fates
-isofate<-merge(present,future,by.x=c("UniqueID","Year","Group",  "Block", "Plant","YearFound"),by.y=c("UniqueID","YearFate","Group",  "Block", "Plant","YearFound"),all = TRUE)#this includes all plants, without matches in past/future, as well
 isofate2<-merge(present,future,by.x=c("UniqueID","Year","Group",  "Block", "Plant","YearFound"),by.y=c("UniqueID","YearFate","Group",  "Block", "Plant","YearFound"))#this only includes plants for which there is fate data that matches
-dim(isofate);dim(isofate2)
 head(isofate2)
 colnames(isofate)
-isofate=isofate[,-12]#remove dupicate year column
 isofate2=isofate2[,-12]#remove dupicate year column
 #add column names
-colnames(isofate)=c("UniqueID","Year", "Group",  "Block", "Plant",  "YearFound","Emerg_cur","Emerg_prev","Stage_cur","Stage_prev","dormstage","FutEmerg","Emerg_REMOVE","Fate","Stage_cur2","dormstage_fut")
 colnames(isofate2)=c("UniqueID","Year", "Group",  "Block", "Plant",  "YearFound","Emerg_cur","Emerg_prev","Stage_cur","Stage_prev","dormstage","FutEmerg","Emerg_REMOVE","Fate","Stage_cur2","dormstage_fut")
 
-isofate<-subset(isofate,select=c("UniqueID","Year", "Group",  "Block", "Plant",  "YearFound","Emerg_cur","Emerg_prev","Stage_cur","dormstage","Stage_prev","FutEmerg","Fate","dormstage_fut"))
 isofate2<-subset(isofate2,select=c("UniqueID","Year", "Group",  "Block", "Plant",  "YearFound","Emerg_cur","Emerg_prev","Stage_cur","dormstage","Stage_prev","FutEmerg","Fate","dormstage_fut"))
-#I think I will mostly use isofate2, which only includes matches, so stick with that one for rest of formatting
 #Add column for survival
 #To do this,loop through each individual for each row, if dormant for less than 5 years, then alive. if not, then dead
 
