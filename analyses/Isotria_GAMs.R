@@ -87,26 +87,21 @@ dat2<-cbind(dat1[2:7],dat1$year,dat1[8:47])
 dat3<-reshape(dat2,varying=list(names(dat2)[1:6]),direction = "long", v.names = c("probfruit"), times = c(names(dat2)[1:6]))
 dat4<-dat3[,-44]
 colnames(dat4)[42]<-"Stage"
+colnames(dat4)[1]<-"year"
 
 quartz(height=5,width=8)
 par(mfrow=c(2,3))
 # and now, fit a GAM for dormant(prev veg) plants
 #try comparing model fit with stages and without stages
 #Model that includes stage:
-mod1 <- gam(Temp ~ Stage + s(lags, by=tcovar, bs="cs"),
-            data=dat4, method="GCV.Cp",gamma=1.2, family = gaussian)
-                s(Doy, bs = "cc", by = Loc, k = 5, m = 1) + 
-                s(Tod, bs = "cc", k = 5) + 
-                s(Tod, bs = "cc", by = Loc, k = 5, m = 1) +
-                te(Tod, Doy, by = Loc, bs = rep("cc",2)),
-              )
+mod1 <- gam(logit(probfruit) ~ s(lags, by=tcovar, bs="cs") + s(Stage, bs = "cs", by =tcovar) + te(lags, Stage, by =tcovar, bs = rep("cs",2)),data=dat4, method="GCV.Cp",gamma=1.2, family = gaussian)
 
 #No Stage-level differences in effect of lag
-  mod0 <- gam(Temp ~ Stage + s(lags, by=tcovar, bs="cs") + 
+  mod0 <- gam(logit(probfruit) ~ Stage + s(lags, by=tcovar, bs="cs") + 
                 s(Doy, bs = "cc", by = Loc, k = 5, m = 1) + 
                 s(Tod, bs = "cc", k = 5) + 
                 s(Tod, bs = "cc", by = Loc, k = 5, m = 1),
-              data = DatNew, method = "ML")
+              data = dat4, method = "ML")
 
 
 
