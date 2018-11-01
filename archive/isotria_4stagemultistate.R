@@ -4,8 +4,8 @@
 #this file has code for a 4 state multistate model to analyze two groups (x and y) from a population of Isotria medeoloides
 #the model here allows vital rate estimates in the multistate model to vary independently among years in their random effect structure
 #started September 26, 2016
-#setwd("~/isotria") #at usgs
-setwd("~/git/isotria/analyses")
+
+setwd("~/Documents/GitHub/isotria/archive")
 rm(list=ls()) 
 options(stringsAsFactors=FALSE)
 
