@@ -6,7 +6,7 @@
 #Modified July 2018 to run through different survival probabilities, keeping survivial and dormancy constant
 
 rm(list=ls()) 
-setwd("~/isotria")
+setwd(setwd("~/Documents/GitHub/isotria"))
 options(stringsAsFactors=FALSE)
  
 library(rjags)
@@ -30,17 +30,16 @@ library(boot)
 #fvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
 #fvvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #fuvvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
-dvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
+dvvals<-c(0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5, 0.55,0.6, 0.65, 0.7,0.75, 0.8, 0.85, 0.9,0.95)
 #sfvals<-c(0.6, 0.7, 0.8, 0.9)
 #ffvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #fufvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 
-dfvals<-c(0.15,0.25,0.35,0.45,0.55, 0.65, 0.75, 0.85, 0.95)
+dfvals<-c(0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5, 0.55,0.6, 0.65, 0.7,0.75, 0.8, 0.85, 0.9,0.95)
 #first, define mean survival, flowering probability, and dormancy/emergence probability, 
 #as well as the number of occassions, states, observations, and marked individuals
-#for now, andy said to vary survival only- use realistic values for f and d
-duvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
-dufvals<-c(0.15,0.25,0.35,0.45,0.55, 0.65, 0.75, 0.85, 0.95)
+duvvals<-c(0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5, 0.55,0.6, 0.65, 0.7,0.75, 0.8, 0.85, 0.9,0.95)
+dufvals<-c(0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5, 0.55,0.6, 0.65, 0.7,0.75, 0.8, 0.85, 0.9,0.95)
 
 #first, define mean survival, flowering probability, and dormancy/emergence probability, 
 #as well as the number of occassions, states, observations, and marked individuals
@@ -82,7 +81,7 @@ dF.df<-data.frame(dF_true=numeric(),
 #for(a in 1:length(svvals)){
 #for (b in 1:length(fvvals)){
   for(c in 1:length(dvvals)){
-  for(j in 1:5){#do each simulation 20 times to check model. eventually will want to do this 100 times
+  for(j in 1:3){#do each simulation 20 times to check model. eventually will want to do this 100 times
     #sV<-svvals[a]#survival=phi
     #sF<-sfvals[a]
     
@@ -350,7 +349,7 @@ parameters <- c("mean.sV","mean.sF","mean.fV","mean.fF","mean.dV","mean.dF")
 ni <- 10000
 nt <- 10
 nb <- 2000
-nc <- 3
+nc <- 2
 
 # Call JAGS from R #
 #complex model
@@ -360,22 +359,22 @@ print(ms2stage, digits=3)
 
 ##Table of model summary, with betas
 mod.sum<-ms2stage$summary
-name<-paste("sV", sV,"sF",sF,j,".csv", sep="_")
+name<-paste("dV", dV,"dF",dF,j,".csv", sep="_")
 
 namesum<-paste("modsum",name,sep="_")
-pathsum="C:/Users/aettinger/Documents/isotria/simdat_modsums/2stage/sprobs"
+pathsum="/Users/aileneettinger/Documents/GitHub/isotria/analyses/simdat_modsums/2stage/dprobs"
 filesum<-file.path(pathsum,namesum)
 write.csv(mod.sum,paste(filesum),row.names=T)
 }#j
-#    }#c
-  }#b
+    }#c
+#  }#b
  #}#a
 
 
 ###If code stops running before full set of simulations has been done, then use the following:
 
 
-pathsum="C:/Users/aettinger/Documents/isotria/simdat_modsums/2stage/sprobs"
+pathsum="Users/aettinger/Documents/isotria/simdat_modsums/2stage/dprobs"
 files<-list.files(path = pathsum)
 for(j in 1:length(files)){
 namesum<-files[j]
