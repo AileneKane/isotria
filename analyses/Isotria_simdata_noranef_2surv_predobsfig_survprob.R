@@ -27,10 +27,10 @@ library(boot)
 
 #since there are many, many potential combinations of vital rates to test, i will start with varying s, f, and d at 4 different values each. i will assume that flowering plants and vegetative plants have different, but correlated vital rates (i.e. when a given vital rate is high for flowering plants, it is also high  for vetetative plants)
 #for now, assume that uf and uv plants have same d and f probs
-svvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6)
+svvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6,0.7,0.8,0.9)
 #fvvals<-c(0.3, 0.6, 0.9)
 #dvvals<-c(0.15,0.35,0.55,0.75,0.95)
-sfvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6)
+sfvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6,0.6,0.7,0.8,0.9)
 
 #ffvals<-c(0.3, 0.6, 0.9)
 #dfvals<-c(0.15,0.35,0.55,0.75,0.95)
@@ -115,9 +115,9 @@ for(a in 1:length(svvals)){
       #sUV<-0.7
       #sUF<-0.7
       fV<-0.5
-      fF<- 0.5
+      fF<- 0.7
       fUV<-0.5
-      fUF<-0.5
+      fUF<-0.7
       dV<-0.5
       dF<-0.5
       dUV<-0.5

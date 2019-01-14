@@ -26,12 +26,12 @@ library(boot)
 
 #since there are many, many potential combinations of vital rates to test, i will start with varying s, f, and d at 4 different values each. i will assume that flowering plants and vegetative plants have different, but correlated vital rates (i.e. when a given vital rate is high for flowering plants, it is also high  for vetetative plants)
 #for now, assume that uf and uv plants have same d and f probs
-svvals<-c(0.6,0.7, 0.8, 0.9)
+svvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6,0.7,0.8,0.9)
 #fvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
 #fvvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #fuvvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #dvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
-sfvals<-c(0.6, 0.7, 0.8, 0.9)
+sfvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6,0.7,0.8,0.9)
 #ffvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #fufvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 
@@ -80,7 +80,7 @@ dF.df<-data.frame(dF_true=numeric(),
 for(a in 1:length(svvals)){
 #for (b in 1:length(fvvals)){
   #for(c in 1:length(dvvals)){
-  for(j in 1:5){#do each simulation 20 times to check model. eventually will want to do this 100 times
+  for(j in 1:1){#do each simulation 20 times to check model. eventually will want to do this 100 times
     sV<-svvals[a]#survival=phi
     sF<-sfvals[a]
     
@@ -361,7 +361,7 @@ mod.sum<-ms2stage$summary
 name<-paste("sV", sV,"sF",sF,j,".csv", sep="_")
 
 namesum<-paste("modsum",name,sep="_")
-pathsum="C:/Users/aettinger/Documents/isotria/simdat_modsums/2stage/sprobs"
+pathsum="/Users/aileneettinger/Documents/GitHub/isotria/analyses/simdat_modsums/2stage/sprobs"
 filesum<-file.path(pathsum,namesum)
 write.csv(mod.sum,paste(filesum),row.names=T)
 }#j
@@ -373,7 +373,7 @@ write.csv(mod.sum,paste(filesum),row.names=T)
 ###If code stops running before full set of simulations has been done, then use the following:
 
 
-pathsum="C:/Users/aettinger/Documents/isotria/simdat_modsums/2stage/sprobs"
+pathsum="analyses/simdat_modsums/2stage/sprobs"
 files<-list.files(path = pathsum)
 for(j in 1:length(files)){
 namesum<-files[j]
@@ -381,7 +381,6 @@ filesum<-file.path(pathsum,namesum)
 ms2stage<-read.csv(filesum)
 row.names(ms2stage)<-ms2stage[,1]
 ms2stage<-ms2stage[,-1]
-#b<-which(fvvals==as.numeric(substr(namesum,13,15)))
 sV.df[j,1]<-as.numeric(substr(namesum,11,13))
 sV.df[j,2]<-ms2stage$mean[1]
 sV.df[j,3]<-ms2stage[1,grep("2.5",colnames(ms2stage))]
@@ -415,9 +414,9 @@ dF.df[j,4]<-ms2stage[6,grep("97.5",colnames(ms2stage))]
 #Now make a figure of estimate vs true SURVIVAL:
 sV.df[,1]<-as.numeric(sV.df[,1])
 sV.df[,2]<-as.numeric(sV.df[,2])
-x11(height=6, width=10)
+quartz(height=6, width=10)
 par(mfrow=c(1,2))
-plot(sV.df[,1],sV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sV (2 Surv. Mod)")
+plot(sV.df[,1],sV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sV (2-stage)")
 abline(a=0, b=1, lty=1 )
 for(i in 1:dim(sV.df)[1]){
   arrows(sV.df[i,1],sV.df[i,3],sV.df[i,1],sV.df[i,4], length=0.01, angle=90, code=3)
@@ -426,52 +425,52 @@ points(sV.df[,1],sV.df[,2], pch=21, bg="gray")
 
 sF.df[,1]<-as.numeric(sF.df[,1])
 sF.df[,2]<-as.numeric(sF.df[,2])
-plot(sF.df[,1],sF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sF (2 Surv. Mod)")
+plot(sF.df[,1],sF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sF (2-stage)")
 abline(a=0, b=1, lty=1 )
 for(i in 1:dim(sF.df)[1]){
   arrows(sF.df[i,1],sF.df[i,3],sF.df[i,1],sF.df[i,4], length=0.01, angle=90, code=3)
 }
 points(sF.df[,1],sF.df[,2], pch=21, bg="gray")
 
-#Now make a figure of estimate vs true FLOWERING:
-fV.df[,1]<-as.numeric(fV.df[,1])
-fV.df[,2]<-as.numeric(fV.df[,2])
-x11(height=6, width=10)
-par(mfrow=c(1,2))
-plot(fV.df[,1],fV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fV (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(fV.df)[1]){
-  arrows(fV.df[i,1],fV.df[i,3],fV.df[i,1],fV.df[i,4], length=0.01, angle=90, code=3)
-}
-points(fV.df[,1],fV.df[,2], pch=21, bg="gray")
-
-fF.df[,1]<-as.numeric(fF.df[,1])
-fF.df[,2]<-as.numeric(fF.df[,2])
-plot(fF.df[,1],fF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fF (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(fF.df)[1]){
-  arrows(fF.df[i,1],fF.df[i,3],fF.df[i,1],fF.df[i,4], length=0.01, angle=90, code=3)
-}
-points(fF.df[,1],fF.df[,2], pch=21, bg="gray")
-#Now make a figure of estimate vs true dormancy:
-dV.df[,1]<-as.numeric(dV.df[,1])
-dV.df[,2]<-as.numeric(dV.df[,2])
-x11(height=6, width=10)
-par(mfrow=c(1,2))
-plot(dV.df[,1],dV.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dV (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(dV.df)[1]){
-  arrows(dV.df[i,1],dV.df[i,3],dV.df[i,1],dV.df[i,4], length=0.01, angle=90, code=3)
-}
-points(dV.df[,1],dV.df[,2], pch=21, bg="gray")
-
-
-dF.df[,1]<-as.numeric(dF.df[,1])
-dF.df[,2]<-as.numeric(dF.df[,2])
-
-plot(dF.df[,1],dF.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dF (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(dF.df)[1]){
-  arrows(dF.df[i,1],dF.df[i,3],dF.df[i,1],dF.df[i,4], length=0.01, angle=90, code=3)
-}
-points(dF.df[,1],dF.df[,2], pch=21, bg="gray")
+# #Now make a figure of estimate vs true FLOWERING:
+# fV.df[,1]<-as.numeric(fV.df[,1])
+# fV.df[,2]<-as.numeric(fV.df[,2])
+# x11(height=6, width=10)
+# par(mfrow=c(1,2))
+# plot(fV.df[,1],fV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fV (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(fV.df)[1]){
+#   arrows(fV.df[i,1],fV.df[i,3],fV.df[i,1],fV.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(fV.df[,1],fV.df[,2], pch=21, bg="gray")
+# 
+# fF.df[,1]<-as.numeric(fF.df[,1])
+# fF.df[,2]<-as.numeric(fF.df[,2])
+# plot(fF.df[,1],fF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fF (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(fF.df)[1]){
+#   arrows(fF.df[i,1],fF.df[i,3],fF.df[i,1],fF.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(fF.df[,1],fF.df[,2], pch=21, bg="gray")
+# #Now make a figure of estimate vs true dormancy:
+# dV.df[,1]<-as.numeric(dV.df[,1])
+# dV.df[,2]<-as.numeric(dV.df[,2])
+# x11(height=6, width=10)
+# par(mfrow=c(1,2))
+# plot(dV.df[,1],dV.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dV (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(dV.df)[1]){
+#   arrows(dV.df[i,1],dV.df[i,3],dV.df[i,1],dV.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(dV.df[,1],dV.df[,2], pch=21, bg="gray")
+# 
+# 
+# dF.df[,1]<-as.numeric(dF.df[,1])
+# dF.df[,2]<-as.numeric(dF.df[,2])
+# 
+# plot(dF.df[,1],dF.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dF (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(dF.df)[1]){
+#   arrows(dF.df[i,1],dF.df[i,3],dF.df[i,1],dF.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(dF.df[,1],dF.df[,2], pch=21, bg="gray")

@@ -374,7 +374,7 @@ write.csv(mod.sum,paste(filesum),row.names=T)
 ###If code stops running before full set of simulations has been done, then use the following:
 
 
-pathsum="Users/aettinger/Documents/isotria/simdat_modsums/2stage/dprobs"
+pathsum="analyses/simdat_modsums/2stage/dprobs"
 files<-list.files(path = pathsum)
 for(j in 1:length(files)){
 namesum<-files[j]
@@ -383,12 +383,12 @@ ms2stage<-read.csv(filesum)
 row.names(ms2stage)<-ms2stage[,1]
 ms2stage<-ms2stage[,-1]
 #b<-which(fvvals==as.numeric(substr(namesum,13,15)))
-sV.df[j,1]<-as.numeric(substr(namesum,11,13))
+sV.df[j,1]<-sV
 sV.df[j,2]<-ms2stage$mean[1]
 sV.df[j,3]<-ms2stage[1,grep("2.5",colnames(ms2stage))]
 sV.df[j,4]<-ms2stage[1,grep("97.5",colnames(ms2stage))]
 
-sF.df[j,1]<-as.numeric(substr(namesum,18,20))
+sF.df[j,1]<-sF
 sF.df[j,2]<-ms2stage$mean[2]
 sF.df[j,3]<-ms2stage[2,grep("2.5",colnames(ms2stage))]
 sF.df[j,4]<-ms2stage[2,grep("97.5",colnames(ms2stage))]
@@ -403,76 +403,80 @@ fF.df[j,2]<-ms2stage$mean[4]
 fF.df[j,3]<-ms2stage[4,grep("2.5",colnames(ms2stage))]
 fF.df[j,4]<-ms2stage[4,grep("97.5",colnames(ms2stage))]
 
-dV.df[j,1]<-dV
+dV.df[j,1]<-as.numeric(substr(namesum,11,14))
+if(substr(namesum,14,14) == "_"){dV.df[j,1]<-as.numeric(substr(namesum,11,13))}
 dV.df[j,2]<-ms2stage$mean[5]
 dV.df[j,3]<-ms2stage[5,grep("2.5",colnames(ms2stage))]
 dV.df[j,4]<-ms2stage[5,grep("97.5",colnames(ms2stage))]
-dF.df[j,1]<-dF
+
+dF.df[j,1]<-as.numeric(substr(namesum,18,21))
+if(substr(namesum,21,21) == "_"){dF.df[j,1]<-as.numeric(substr(namesum,18,20))}
 dF.df[j,2]<-ms2stage$mean[6]
 dF.df[j,3]<-ms2stage[6,grep("2.5",colnames(ms2stage))]
 dF.df[j,4]<-ms2stage[6,grep("97.5",colnames(ms2stage))]
 }#j
 
-#Now make a figure of estimate vs true SURVIVAL:
-sV.df[,1]<-as.numeric(sV.df[,1])
-sV.df[,2]<-as.numeric(sV.df[,2])
-x11(height=6, width=10)
-par(mfrow=c(1,2))
-plot(sV.df[,1],sV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sV (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(sV.df)[1]){
-  arrows(sV.df[i,1],sV.df[i,3],sV.df[i,1],sV.df[i,4], length=0.01, angle=90, code=3)
-}
-points(sV.df[,1],sV.df[,2], pch=21, bg="gray")
+# #Now make a figure of estimate vs true SURVIVAL:
+# sV.df[,1]<-as.numeric(sV.df[,1])
+# sV.df[,2]<-as.numeric(sV.df[,2])
+# quartz(height=6, width=10)
+# par(mfrow=c(1,2))
+# plot(sV.df[,1],sV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sV (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(sV.df)[1]){
+#   arrows(sV.df[i,1],sV.df[i,3],sV.df[i,1],sV.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(sV.df[,1],sV.df[,2], pch=21, bg="gray")
+# 
+# sF.df[,1]<-as.numeric(sF.df[,1])
+# sF.df[,2]<-as.numeric(sF.df[,2])
+# plot(sF.df[,1],sF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sF (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(sF.df)[1]){
+#   arrows(sF.df[i,1],sF.df[i,3],sF.df[i,1],sF.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(sF.df[,1],sF.df[,2], pch=21, bg="gray")
 
-sF.df[,1]<-as.numeric(sF.df[,1])
-sF.df[,2]<-as.numeric(sF.df[,2])
-plot(sF.df[,1],sF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="sF (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(sF.df)[1]){
-  arrows(sF.df[i,1],sF.df[i,3],sF.df[i,1],sF.df[i,4], length=0.01, angle=90, code=3)
-}
-points(sF.df[,1],sF.df[,2], pch=21, bg="gray")
+# #Now make a figure of estimate vs true FLOWERING:
+# fV.df[,1]<-as.numeric(fV.df[,1])
+# fV.df[,2]<-as.numeric(fV.df[,2])
+# quartz(height=6, width=10)
+# par(mfrow=c(1,2))
+# plot(fV.df[,1],fV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fV (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(fV.df)[1]){
+#   arrows(fV.df[i,1],fV.df[i,3],fV.df[i,1],fV.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(fV.df[,1],fV.df[,2], pch=21, bg="gray")
+# 
+# fF.df[,1]<-as.numeric(fF.df[,1])
+# fF.df[,2]<-as.numeric(fF.df[,2])
+# plot(fF.df[,1],fF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fF (2 Surv. Mod)")
+# abline(a=0, b=1, lty=1 )
+# for(i in 1:dim(fF.df)[1]){
+#   arrows(fF.df[i,1],fF.df[i,3],fF.df[i,1],fF.df[i,4], length=0.01, angle=90, code=3)
+# }
+# points(fF.df[,1],fF.df[,2], pch=21, bg="gray")
 
-#Now make a figure of estimate vs true FLOWERING:
-fV.df[,1]<-as.numeric(fV.df[,1])
-fV.df[,2]<-as.numeric(fV.df[,2])
-x11(height=6, width=10)
-par(mfrow=c(1,2))
-plot(fV.df[,1],fV.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fV (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(fV.df)[1]){
-  arrows(fV.df[i,1],fV.df[i,3],fV.df[i,1],fV.df[i,4], length=0.01, angle=90, code=3)
-}
-points(fV.df[,1],fV.df[,2], pch=21, bg="gray")
-
-fF.df[,1]<-as.numeric(fF.df[,1])
-fF.df[,2]<-as.numeric(fF.df[,2])
-plot(fF.df[,1],fF.df[,2], pch=16, col="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="fF (2 Surv. Mod)")
-abline(a=0, b=1, lty=1 )
-for(i in 1:dim(fF.df)[1]){
-  arrows(fF.df[i,1],fF.df[i,3],fF.df[i,1],fF.df[i,4], length=0.01, angle=90, code=3)
-}
-points(fF.df[,1],fF.df[,2], pch=21, bg="gray")
 #Now make a figure of estimate vs true dormancy:
 dV.df[,1]<-as.numeric(dV.df[,1])
 dV.df[,2]<-as.numeric(dV.df[,2])
-x11(height=6, width=10)
+quartz(height=6, width=10)
 par(mfrow=c(1,2))
-plot(dV.df[,1],dV.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dV (2 Surv. Mod)")
+plot(dV.df[,1],dV.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dV (2-stage)")
 abline(a=0, b=1, lty=1 )
-for(i in 1:dim(dV.df)[1]){
-  arrows(dV.df[i,1],dV.df[i,3],dV.df[i,1],dV.df[i,4], length=0.01, angle=90, code=3)
-}
+ for(i in 1:dim(dV.df)[1]){
+   arrows(dV.df[i,1],dV.df[i,3],dV.df[i,1],dV.df[i,4], length=0.01, angle=90, code=3)
+ }
 points(dV.df[,1],dV.df[,2], pch=21, bg="gray")
 
 
 dF.df[,1]<-as.numeric(dF.df[,1])
 dF.df[,2]<-as.numeric(dF.df[,2])
 
-plot(dF.df[,1],dF.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dF (2 Surv. Mod)")
+plot(dF.df[,1],dF.df[,2], pch=21, bg="gray", xlim=c(0,1), ylim=c(0,1), xlab="True value", ylab="Estimate", main="dF (2-stage)")
 abline(a=0, b=1, lty=1 )
-for(i in 1:dim(dF.df)[1]){
-  arrows(dF.df[i,1],dF.df[i,3],dF.df[i,1],dF.df[i,4], length=0.01, angle=90, code=3)
-}
+ for(i in 1:dim(dF.df)[1]){
+   arrows(dF.df[i,1],dF.df[i,3],dF.df[i,1],dF.df[i,4], length=0.01, angle=90, code=3)
+ }
 points(dF.df[,1],dF.df[,2], pch=21, bg="gray")
