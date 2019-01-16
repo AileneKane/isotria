@@ -376,7 +376,7 @@ mod.sum<-ms2stage$summary
 name<-paste("fV", fV,"fF",fF,j,".csv", sep="_")
 
 namesum<-paste("modsum",name,sep="_")
-pathsum="C:/Users/aettinger/Documents/isotria/simdat_modsums/2stage/fprobs"
+pathsum="/Users/aileneettinger/Documents/GitHub/isotria/analyses/simdat_modsums/2stage/fprobs"
 filesum<-file.path(pathsum,namesum)
 write.csv(mod.sum,paste(filesum),row.names=T)
 }#j
@@ -387,8 +387,7 @@ write.csv(mod.sum,paste(filesum),row.names=T)
 
 ###If code stops running before full set of simulations has been done, then use the following:
 
-
-pathsum="C:/Users/aettinger/Documents/isotria/simdat_modsums/2stage/fprobs"
+pathsum="/Users/aileneettinger/Documents/GitHub/isotria/analyses/simdat_modsums/2stage/fprobs"
 files<-list.files(path = pathsum)
 for(j in 1:length(files)){
 namesum<-files[j]

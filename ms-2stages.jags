@@ -1,0 +1,95 @@
+
+    
+    model {
+    # -------------------------------------------------
+
+    # Parameters:
+    # sV: survival probability for vegetative plants
+    # sF: survival probability for reproductive plants
+    # fV: reproduction probability for vegetative plants
+    # fF: reproduction probability for reproductive plants
+    # dV: dormancy probability for vegetative plants
+    # dF: dormancy  probability for reproductive plants
+    # -------------------------------------------------
+    # States (S):
+    # 1 alive and vegetative
+    # 2 alive and reproductive
+    # 3 dead
+    # Observations (O):  
+    # 1 seen nonreproductive
+    # 2 seen reproductive
+    # 3 not seen
+    # -------------------------------------------------
+    
+    for (i in 1:nind){
+    for (t in f[i]:(n.occasions-1)){
+    logit(sV[i,t]) <- eta.sV[t]
+    logit(sF[i,t]) <- eta.sF[t]
+    logit(fV[i,t]) <- eta.fV[t]
+    logit(fF[i,t]) <- eta.fF[t]
+    logit(dV[i,t]) <- eta.dV[t]
+    logit(dF[i,t]) <- eta.dF[t]
+  }#t
+}#i
+
+    for (t in 1:(n.occasions-1)){
+    eta.sV[t]  <-mu.sV
+    eta.sF[t]  <-mu.sF
+    eta.fV[t]  <-mu.fV
+    eta.fF[t]  <-mu.fF
+    eta.dV[t]  <-mu.dV
+    eta.dF[t]  <-mu.dF
+  }#t
+    mean.sV~dunif(0,1)# Priors for mean survival 
+    mu.sV<-log(mean.sV/(1-mean.sV)) 
+    mean.sF~dunif(0,1)# Priors for mean survival 
+    mu.sF<-log(mean.sF/(1-mean.sF))  
+     mean.fV~dunif(0,1)# Priors for mean group-specific prob of rep for veg plants
+    mu.fV<-log(mean.fV/(1-mean.fV))       
+    mean.fF~dunif(0,1)# Priors for mean group-specific prob of rep for rep plants
+    mu.fF<-log(mean.fF/(1-mean.fF))    
+    mean.dV~dunif(0,1)# Priors for mean group-specific dormancy for veg plants
+    mu.dV<-log(mean.dV/(1-mean.dV))       
+    mean.dF~dunif(0,1)# Priors for mean group-specific dormancy for rep plants
+    mu.dF<-log(mean.dF/(1-mean.dF))    
+    
+    # Define state-transition and observation matrices
+    for (i in 1:nind){  
+    # Define probabilities of state S(t+1) given S(t)
+    for (t in f[i]:(n.occasions-1)){
+    ps[1,i,t,1] <- sV[i,t] * (1-fV[i,t])
+    ps[1,i,t,2] <- sV[i,t] * fV[i,t]
+    ps[1,i,t,3] <- 1-sV[i,t]
+    ps[2,i,t,1] <- sF[i,t] * (1-fF[i,t])
+    ps[2,i,t,2] <- sF[i,t] * (fF[i,t])
+    ps[2,i,t,3] <- 1-sF[i,t]
+    ps[3,i,t,1] <- 0
+    ps[3,i,t,2] <- 0
+    ps[3,i,t,3] <- 1
+    
+    # Define probabilities of O(t) given S(t) ##first coumn is observed state, last is true state
+    po[1,i,t,1] <- 1-dV[i,t]
+    po[1,i,t,2] <- 0
+    po[1,i,t,3] <- dV[i,t]
+    po[2,i,t,1] <- 0
+    po[2,i,t,2] <- 1-dF[i,t]
+    po[2,i,t,3] <- dF[i,t]
+    po[3,i,t,1] <- 0
+    po[3,i,t,2] <- 0
+    po[3,i,t,3] <- 1
+    } #t
+    } #i
+    
+    # Likelihood 
+    for (i in 1:nind){
+    # Define latent state at first capture
+    z[i,f[i]] <- y[i,f[i]]
+    for (t in (f[i]+1):n.occasions){
+    # State process: draw S(t) given S(t-1)
+    z[i,t] ~ dcat(ps[z[i,t-1], i, t-1,])
+    # Observation process: draw O(t) given S(t)
+    y[i,t] ~ dcat(po[z[i,t], i, t-1,])
+    } #t
+    } #i
+    }
+    
