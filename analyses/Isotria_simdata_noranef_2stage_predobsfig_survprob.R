@@ -26,12 +26,12 @@ library(boot)
 
 #since there are many, many potential combinations of vital rates to test, i will start with varying s, f, and d at 4 different values each. i will assume that flowering plants and vegetative plants have different, but correlated vital rates (i.e. when a given vital rate is high for flowering plants, it is also high  for vetetative plants)
 #for now, assume that uf and uv plants have same d and f probs
-svvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6,0.7,0.8,0.9)
+svvals<-c(0.5, 0.6,0.7,0.8,0.9)
 #fvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
 #fvvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #fuvvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #dvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
-sfvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6,0.7,0.8,0.9)
+sfvals<-c(0.5, 0.6,0.7,0.8,0.9)
 #ffvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 #fufvals<-c(0.5, 0.6, 0.7, 0.8, 0.9)
 
@@ -80,7 +80,7 @@ dF.df<-data.frame(dF_true=numeric(),
 for(a in 1:length(svvals)){
 #for (b in 1:length(fvvals)){
   #for(c in 1:length(dvvals)){
-  for(j in 1:1){#do each simulation 20 times to check model. eventually will want to do this 100 times
+  for(j in 1:5){#do each simulation 20 times to check model. eventually will want to do this 100 times
     sV<-svvals[a]#survival=phi
     sF<-sfvals[a]
     
