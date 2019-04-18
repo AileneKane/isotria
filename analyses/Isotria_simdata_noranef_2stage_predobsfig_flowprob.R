@@ -1,12 +1,13 @@
 #Isotria multistate model
 #Simulate data with known parameters to test the ability of the two-stage model to recover them
 #Do this for a range of values for each vital rate, so that we can assess the model's ability to recover true values
+#Flowering probability code
 #Save all estimates, posterior, and model output for later use
 #Modified May 16, 2017
 #Modified again Sept 11, 2017 to run through different flowering probabilities, keeping survivial and dormancy constant
 #Modified from 4-stage code June 14, 2018
 rm(list=ls()) 
-setwd("~/isotria")
+setwd("~/Documents/GitHub/isotria")
 options(stringsAsFactors=FALSE)
  
 library(rjags)
@@ -28,12 +29,12 @@ library(boot)
 #for now, assume that uf and uv plants have same d and f probs
 #svvals<-c(0.7, 0.8, 0.9)
 #fvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
-fvvals<-c(0.5, 0.6,0.7, 0.8, 0.9)
-fuvvals<-c(0.5, 0.6,0.7, 0.8, 0.9)
+fvvals<-c(0.1,0.2,0.3,0.4)
+fuvvals<-c(0.1,0.2,0.3,0.4)
 #dvvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
 #sfvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
-ffvals<-c(0.5, 0.6,0.7, 0.8, 0.9)
-fufvals<-c(0.5, 0.6,0.7, 0.8, 0.9)
+ffvals<-c(0.1,0.2,0.3,0.4)
+fufvals<-c(0.1,0.2,0.3,0.4)
 
 #dfvals<-c(0.1,0.2,0.3,0.4,0.5, 0.6, 0.7, 0.8, 0.9)
 #first, define mean survival, flowering probability, and dormancy/emergence probability, 
@@ -99,7 +100,7 @@ dUF.df<-data.frame(dUF_true=numeric(),
 #for(a in 1:length(svvals)){
 for (b in 1:length(fvvals)){
   #for(c in 1:length(dvvals)){
-  for(j in 2:5){#do each simulation 20 times to check model. eventually will want to do this 100 times
+  for(j in 2:4){#do each simulation 20 times to check model. eventually will want to do this 100 times
     #sV<-svvals[a]#survival=phi
     #sF<-sfvals[a]
     #sUV<-svvals[a]

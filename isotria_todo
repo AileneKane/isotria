@@ -1,9 +1,9 @@
 To Do for Isotria figures:
-1) increase reps of survival to 5 for 2stage
+1) increase reps of survival to 5 for 2stage-DONE 
 2) MAke figure for survival just .5-1.0
 3) reps of dorm to 5 (from 3)
-4) increase reps of flor probs to 5 for 2stage
+4) increase reps of flor probs to 5 for 2stage (when <0.5; this is done for greater than .5- need to do this for )
 5) 0.1 for dorm in 4-stage
 6) .1 for flow in 4-stage
-7) make estimated vs true plots for bonth models
+7) make estimated vs true plots for both models
 8) add to manuscript!

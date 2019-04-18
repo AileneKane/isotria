@@ -452,7 +452,7 @@ print(ms4.rf, digits=3)
 
 ###save all samples
 name<-paste("fVfF", fV,"fUVfUF",fUV,j,".csv", sep="_")
-path="C:/Users/aettinger/Documents/isotria/simdat_modsamples/fprobs"
+path="/Users/aileneettinger/Documents/GitHub/ospree/analyses/4stage/simdat_modsamples/fprobs"
 file<-file.path(path,name)
 mod.samples_4stage<- as.data.frame(do.call("rbind", ms4.rf$samples))
 write.csv(mod.samples_4stage,paste(file),row.names=T)
